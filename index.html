@@ -1,0 +1,829 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Encuentra revistas científicas para tu artículo: cuartil SCImago 2025, cobertura en Scopus hasta 2026, APC, idioma y región. Gratis.">
+<meta property="og:title" content="Buscador de Revistas">
+<meta property="og:description" content="Revistas Scopus y DOAJ afines a tu artículo, con cuartil, cobertura 2026, costo e idioma.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22%3E%3Crect width=%2240%22 height=%2240%22 rx=%228%22 fill=%22%23141414%22/%3E%3Crect x=%2210%22 y=%229%22 width=%224%22 height=%2222%22 rx=%221%22 fill=%22%23fff%22/%3E%3Crect x=%2216%22 y=%2213%22 width=%224%22 height=%2218%22 rx=%221%22 fill=%22%23bdbdbd%22/%3E%3Crect x=%2222%22 y=%2217%22 width=%224%22 height=%2214%22 rx=%221%22 fill=%22%238a8a8a%22/%3E%3C/svg%3E">
+<title>Buscador de Revistas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Achromatic ledger (seed 821985564). No-sidebar shell: one centred 1160px column.
+   Grid: 360 (controls) + 12 (gap) + 788 (results) = 1160. One gap value, 12px, everywhere.
+   Face: a blue-grey ledger ground (#f2f4f7) and the one chart hue (#1d5fbf) only on the affinity bars,
+   the screen's main data element. Quartiles are an ink ladder, not a rainbow. */
+:root{
+  --ground:#f2f4f7; --surface:#ffffff; --raised:#eeeeee; --active:#e9ebee;
+  --border:#e6e6e6; --rule:#f0f0f0; --control:#d4d4d4;
+  --text:#0a0a0a; --muted:#5f6368; --faint:#6b6b6b;
+  --primary:#141414; --primary-ink:#ffffff;
+  --hue:#1d5fbf; --hue-pale:#e8eef9;
+  --positive:#2e7d32; --negative:#c4242a;
+  --pill-warning-bg:#fffbeb; --pill-warning-ink:#92400e; --notice-line:#fde68a;
+  --q1:#141414; --q2:#3d3d3d; --q3:#6b6b6b; --q4:#c9c9c9; --q0:#e6e6e6;
+  --radius-card:8px; --radius-control:6px; --radius-chip:4px;
+  --gap:12px; --pad:20px; --control-height:36px; --row-height:44px;
+  --font:"Geist",Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Geist Mono",ui-monospace,Menlo,Consolas,monospace;
+  --fs-title:24px; --fs-section:16px; --fs-kpi:30px; --fs-body:14px; --fs-small:12px;
+  color-scheme:light;
+}
+:root[data-theme="dark"]{color-scheme:light}
+*{box-sizing:border-box}
+html{background:var(--ground);-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{background:var(--ground);color:var(--text);font-family:var(--font);font-size:var(--fs-body);line-height:20px;-webkit-font-smoothing:antialiased}
+.col{max-width:1160px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.num{font-variant-numeric:tabular-nums}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--hue);outline-offset:2px}
+
+/* title row */
+.titlerow{padding-block:28px 20px;display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between}
+.brand{display:flex;gap:12px;align-items:center;min-width:0;flex:1 1 560px}
+.mark{flex:none;width:40px;height:40px;display:block}
+h1{font-size:22px;font-weight:700;letter-spacing:.04em;line-height:28px;margin:0;text-transform:uppercase}
+.finding{margin:2px 0 0;font-size:15px;line-height:22px;color:var(--text)}
+.muted,.finding .muted{color:var(--muted)}
+.fresh{font-size:13px;line-height:18px;color:var(--muted);text-align:right;flex:none}
+.fresh b{color:var(--text);font-weight:500}
+
+/* desk */
+.desk{display:grid;grid-template-columns:360px minmax(0,1fr);gap:var(--gap);align-items:start;padding-bottom:48px}
+.side{display:flex;flex-direction:column;gap:var(--gap);min-width:0}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-card);padding:var(--pad);display:flex;flex-direction:column;gap:12px;min-width:0}
+h2{font-size:var(--fs-section);font-weight:500;line-height:22px;margin:0}
+.ph{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 8px}
+.ph .aside{font-size:var(--fs-small);color:var(--muted)}
+.lbl{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:500}
+.lbl .help{font-weight:400;color:var(--muted);font-size:var(--fs-small);line-height:16px}
+textarea,input[type=text],select{background:var(--surface);border:1px solid var(--control);border-radius:var(--radius-control);padding:7px 10px;width:100%;font-size:var(--fs-body);line-height:20px;min-height:var(--control-height)}
+textarea{min-height:132px;resize:vertical}
+input::placeholder,textarea::placeholder{color:var(--faint)}
+textarea:focus,input[type=text]:focus,select:focus{outline:none;border-color:var(--text)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:var(--control-height);padding:0 14px;border-radius:var(--radius-control);border:none;background:var(--raised);color:var(--text);font-size:var(--fs-body);font-weight:500;cursor:pointer;white-space:nowrap;transition:background .12s}
+.btn:hover{background:#e2e2e2}
+.btn:active{transform:translateY(1px)}
+.btn{text-decoration:none}
+.btn.primary{background:var(--primary);color:var(--primary-ink)}
+.btn.primary:hover{background:#2b2b2b}
+.btn.text{background:none;padding:0 6px;color:var(--text)}
+.btn.text:hover{background:var(--active)}
+.btn:disabled{opacity:.55;cursor:default;transform:none}
+.btn svg{width:15px;height:15px;flex:none}
+.drop{position:relative;display:flex;align-items:center;gap:10px;border:1px dashed var(--control);border-radius:var(--radius-control);padding:10px 12px;cursor:pointer;transition:background .12s,border-color .12s}
+.drop:hover,.drop.over{background:var(--active);border-color:var(--faint)}
+.drop:focus-within{outline:2px solid var(--hue);outline-offset:2px}
+.drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.drop svg{width:20px;height:20px;flex:none;color:var(--muted)}
+.drop b{display:block;font-weight:500;font-size:13px}
+.drop small{display:block;color:var(--muted);font-size:var(--fs-small);line-height:16px}
+.or{font-size:var(--fs-small);color:var(--muted);margin:-4px 0}
+.note{font-size:13px;line-height:18px;padding:8px 10px;border-radius:var(--radius-control);background:var(--active);color:var(--text)}
+.note{border:1px solid transparent}
+.note.warn{background:var(--pill-warning-bg);color:var(--pill-warning-ink);border-color:var(--notice-line)}
+.example{font-size:var(--fs-small);font-weight:500;color:var(--pill-warning-ink);background:var(--pill-warning-bg);border-radius:var(--radius-chip);padding:1px 6px}
+
+/* topic chips */
+.group{display:flex;flex-direction:column;gap:6px}
+.glabel{font-size:13px;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:2px;max-width:100%;min-width:0;min-height:28px;padding:0 2px 0 3px;border-radius:var(--radius-control);background:var(--active);font-size:13px}
+.chip span{min-width:0;padding:3px 2px;line-height:18px;overflow-wrap:anywhere}
+.chip .w{flex:none;width:22px;height:22px;border:1px solid var(--control);border-radius:4px;background:var(--surface);font-size:var(--fs-small);font-weight:500;cursor:pointer;padding:0}
+.chip .w:hover{border-color:var(--text)}
+.chip .x{flex:none;width:24px;height:24px;border:none;background:none;color:var(--muted);font-size:16px;cursor:pointer;border-radius:4px}
+.chip .x:hover{color:var(--negative);background:var(--surface)}
+.chip.kw{padding-left:8px}
+.none{font-size:13px;color:var(--muted)}
+.adder{position:relative}
+.sugg{position:absolute;z-index:5;left:0;right:0;top:100%;margin-top:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-control);max-height:260px;overflow:auto;box-shadow:0 8px 24px rgba(0,0,0,.08)} /* taste-skill-ignore: a floating suggestion menu */
+.sugg button{display:flex;gap:8px;width:100%;text-align:left;border:none;background:none;padding:8px 10px;font-size:13px;line-height:18px;cursor:pointer}
+.sugg button:hover,.sugg button.on{background:var(--active)}
+.sugg small{flex:none;width:48px;color:var(--muted);font-size:var(--fs-small)}
+.sugg .empty{padding:8px 10px;font-size:13px;color:var(--muted)}
+
+/* filters */
+.switch{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:18px;cursor:pointer}
+.switch input{position:absolute;opacity:0;pointer-events:none}
+.switch i{flex:none;width:30px;height:18px;border-radius:9px;background:var(--control);position:relative;transition:background .12s;margin-top:0}
+.switch i::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .12s}
+.switch input:checked+i{background:var(--positive)}
+.switch input:checked+i::after{transform:translateX(12px)}
+.switch input:focus-visible+i{outline:2px solid var(--hue);outline-offset:2px}
+.switch b{font-weight:500}
+.switch .help{color:var(--muted)}
+.fs{border:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.fs legend{font-size:13px;font-weight:500;padding:0;margin-bottom:6px}
+.fs .help{font-size:var(--fs-small);line-height:16px;color:var(--muted)}
+.toggles{display:flex;flex-wrap:wrap;gap:6px}
+.tg{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:var(--radius-control);border:1px dashed var(--control);background:var(--ground);color:var(--muted);font-size:13px;font-weight:500;cursor:pointer;transition:border-color .12s,background .12s}
+.tg i{width:10px;height:10px;border-radius:2px;flex:none;opacity:.4}
+.tg:hover{border-color:var(--faint)}
+.tg[aria-pressed="true"]{border:1px solid var(--text);background:var(--surface);color:var(--text)}
+.tg[aria-pressed="true"] i{opacity:1}
+.tg:disabled{cursor:default;opacity:.5}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap)}
+.grid2 .wide{grid-column:1/-1}
+
+/* results */
+.results{display:flex;flex-direction:column;gap:var(--gap);min-width:0}
+.ladder{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-card);padding:16px var(--pad);display:flex;flex-direction:column;gap:12px}
+.ladder .ph h2{display:flex;align-items:baseline;gap:8px}
+.ladder .ph h2 .num{font-size:var(--fs-kpi);line-height:36px;font-weight:700}
+.bar{display:flex;height:12px;border-radius:3px;overflow:hidden;gap:2px;background:var(--surface)}
+.bar span{display:block;height:100%;min-width:3px;transition:opacity .12s}
+.bar span.off{opacity:.22}
+.steps{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+.step{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius-control);background:var(--surface);cursor:pointer;text-align:left;transition:border-color .12s,background .12s}
+.step:hover{border-color:var(--faint)}
+.step .k{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500}
+.step .k i{width:10px;height:10px;border-radius:2px;flex:none}
+.step .v{font-size:18px;line-height:24px;font-variant-numeric:tabular-nums}
+.step[aria-pressed="false"]{background:var(--ground);border-style:dashed}
+.step[aria-pressed="false"] .v,.step[aria-pressed="false"] .k{color:var(--muted)}
+.step[disabled]{cursor:default}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.toolbar .left,.toolbar .right{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.toolbar select{width:auto;min-width:180px}
+.tofilters{display:none;text-decoration:underline;text-decoration-color:var(--control);text-underline-offset:3px}
+.toolbar .count{font-size:13px;color:var(--muted)}
+
+.table{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-card);overflow:hidden}
+.thead,.rhead{display:grid;grid-template-columns:20px 52px minmax(0,1fr) 40px 44px 88px 100px;gap:0 12px;align-items:center;padding:0 16px}
+.thead{height:36px;font-size:var(--fs-small);color:var(--muted);border-bottom:1px solid var(--border)}
+.thead .r,.rhead .r{text-align:right}
+ol.list{list-style:none;margin:0;padding:0}
+ol.list>li{border-bottom:1px solid var(--rule)}
+ol.list>li:last-child{border-bottom:none}
+.rhead{width:100%;min-height:84px;padding-block:14px;text-align:left;cursor:pointer;align-items:start;transition:background .12s}
+.cover{position:relative;display:flex;flex-direction:column;justify-content:space-between;width:52px;height:70px;border-radius:3px;padding:7px 6px 6px;color:#fff;overflow:hidden;box-shadow:inset -3px 0 0 rgba(0,0,0,.18)} /* taste-skill-ignore: spine edge drawn on the cover */
+.cover::before{content:"";position:absolute;left:0;right:0;top:0;height:11px;background:rgba(255,255,255,.22)}
+.cover b{position:relative;font-size:14px;line-height:15px;font-weight:700;letter-spacing:.02em;margin-top:8px;overflow-wrap:anywhere}
+.cover small{position:relative;font-size:11px;line-height:11px;font-weight:500;opacity:.85}
+.f0{background:#2f5d62}.f1{background:#7a2e3a}.f2{background:#2b3a67}.f3{background:#4b6131}.f4{background:#6b4a2b}.f5{background:#8a5a14}.f6{background:#3a3a3a}
+a.jt{color:var(--text);text-decoration:none}
+a.jt:hover{text-decoration:underline;text-underline-offset:3px}
+.jt .go{display:inline-block;width:13px;height:13px;margin-left:5px;vertical-align:-1px;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:13px;border-radius:2px;flex:none}
+.rhead:hover{background:#fafafa}
+.more-btn{align-self:flex-start;height:26px;padding:0 6px;margin:2px 0 0 -6px;font-size:13px;color:var(--muted);text-decoration:underline;text-decoration-color:var(--control);text-underline-offset:3px}
+.more-btn:hover{color:var(--text)}
+li.open .rhead{background:var(--active)}
+.rk{font-size:13px;color:var(--muted);line-height:22px;font-variant-numeric:tabular-nums}
+.idc{min-width:0;display:flex;flex-direction:column;gap:2px}
+.jt{font-size:15px;font-weight:500;line-height:22px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere}
+.sub{font-size:13px;line-height:18px;color:var(--muted);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere}
+.sub.why{color:var(--text);-webkit-line-clamp:1}
+.sub.meta{-webkit-line-clamp:1}
+.sub.why em{font-style:normal;color:var(--muted)}
+.qc{display:inline-flex;align-items:center;justify-content:center;height:22px;min-width:32px;padding:0 6px;border-radius:var(--radius-chip);font-size:var(--fs-small);font-weight:500;font-variant-numeric:tabular-nums;justify-self:start}
+.qc.q1{background:var(--q1);color:#fff} .qc.q2{background:var(--q2);color:#fff} .qc.q3{background:var(--q3);color:#fff}
+.qc.q4{background:var(--q4);color:var(--text)} .qc.q0{background:var(--q0);color:var(--text)}
+.cell{font-size:13px;line-height:22px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cell.dim{color:var(--muted)}
+.aff{display:flex;align-items:center;gap:8px;justify-content:flex-end;height:22px}
+.aff i{flex:1;max-width:56px;height:6px;border-radius:3px;background:var(--hue-pale);overflow:hidden}
+.aff i b{display:block;height:100%;background:var(--hue);border-radius:3px}
+.aff span{font-size:13px;font-variant-numeric:tabular-nums;width:36px;text-align:right}
+.detail{padding:0 16px 16px 116px;display:flex;flex-direction:column;gap:10px;background:var(--active)}
+.kv{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 16px;font-size:13px;line-height:18px}
+.kv div{min-width:0}
+.kv dt{color:var(--muted);font-size:13px}
+.kv dd{margin:0;overflow-wrap:anywhere}
+.matches{font-size:13px;line-height:20px}
+.matches span{color:var(--muted)}
+.ai{font-size:13px;line-height:20px;background:var(--surface);border-radius:var(--radius-control);padding:8px 10px}
+.ai b{font-weight:500}
+.links{display:flex;flex-wrap:wrap;gap:4px 16px}
+.links a{font-size:13px;color:var(--text);font-weight:500;text-decoration:underline;text-decoration-color:var(--control);text-underline-offset:3px}
+.links a:hover{text-decoration-color:var(--text)}
+.issn{font-family:var(--mono);font-size:var(--fs-small)}
+.warnc{color:var(--negative)}
+.empty{padding:28px 20px;text-align:center;color:var(--muted);font-size:14px}
+.skel{display:block;height:14px;border-radius:3px;background:var(--raised)}
+.more{align-self:center}
+.offer{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-card);padding:var(--pad);display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:16px 24px;align-items:center}
+.offer h2{font-size:18px;line-height:24px;font-weight:700}
+.offer p{margin:6px 0 8px;font-size:14px;line-height:20px}
+.offer ul{margin:0;padding-left:18px;font-size:14px;line-height:22px}
+.offer-act{display:flex;flex-direction:column;gap:8px}
+.offer-act .help{font-size:var(--fs-small);line-height:16px;color:var(--muted)}
+@media (max-width:640px){.offer{grid-template-columns:minmax(0,1fr)}}
+.foot{font-size:13px;line-height:20px;color:var(--muted);padding:4px 2px}
+.foot p{margin:0 0 6px}
+.foot b{color:var(--text);font-weight:500}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}*{transition:none!important}}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+@media (max-width:1100px){
+  .desk{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .side{display:contents}
+  #p-art{grid-column:1/-1;order:1}
+  .results{grid-column:1/-1;order:2}
+  #p-fil{order:3} #p-prof{order:3}
+  .tofilters{display:inline-flex}
+}
+@media (max-width:900px){
+  .desk{grid-template-columns:minmax(0,1fr)}
+  #p-prof,#p-fil{grid-column:1/-1}
+  .titlerow{padding-block:20px 16px}
+  .fresh{text-align:left}
+  h1{font-size:20px}
+  .steps{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .thead{display:none}
+  .rhead{grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;padding:12px 16px}
+  .rk,.rhead .c-sjr,.rhead .c-apc{display:none}
+  .rhead{grid-template-columns:52px minmax(0,1fr) auto}
+  .rhead .cover{grid-column:1;grid-row:1/span 2}
+  .rhead .idc{grid-column:2;grid-row:1/span 2}
+  .rhead .qc{grid-column:3;grid-row:1;justify-self:end}
+  .rhead .aff{grid-column:3;grid-row:2}
+  .aff i{width:48px;flex:none}
+  .detail{padding:0 16px 16px}
+  .kv{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .toolbar .left{width:100%}
+  .toolbar select{min-width:0;flex:1 1 180px}
+  .toolbar .right{width:100%;gap:4px}
+  .ladder .ph .aside{width:100%}
+}
+</style>
+</head>
+<body>
+
+
+<div class="col">
+  <header class="titlerow">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="8" fill="#141414"/><rect x="10" y="9" width="4" height="22" rx="1" fill="#fff"/><rect x="16" y="13" width="4" height="18" rx="1" fill="#bdbdbd"/><rect x="22" y="17" width="4" height="14" rx="1" fill="#8a8a8a"/><circle cx="29.5" cy="13.5" r="3.6" fill="none" stroke="#fff" stroke-width="2"/><path d="m32 16 2.5 2.5" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+      <div>
+        <h1>Buscador de Revistas</h1>
+        <p class="finding" id="finding">Cargando el catálogo de revistas…</p>
+      </div>
+    </div>
+    <div class="fresh" id="fresh"></div>
+  </header>
+
+  <div class="desk">
+    <div class="side">
+      <section class="panel" id="p-art" aria-labelledby="h-art">
+        <div class="ph"><h2 id="h-art">Tu artículo</h2><span class="example" id="exTag">Ejemplo</span></div>
+        <label class="drop" for="file">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M12 18v-6M9 15l3-3 3 3"/></svg>
+          <span><b>Subir PDF o Word</b><small>Haz clic o arrastra el archivo aquí</small></span>
+          <input type="file" id="file" accept=".pdf,.docx,.txt,.md">
+        </label>
+        <p class="or">o pega el título y el resumen</p>
+        <label class="sr" for="art">Título y resumen del artículo</label>
+        <textarea id="art" spellcheck="false"></textarea>
+        <button type="button" class="btn primary" id="btnAnalyze">Buscar revistas</button>
+        <div class="note" id="artStatus" role="status" hidden></div>
+      </section>
+
+      <section class="panel" id="p-fil" aria-labelledby="h-fil">
+        <h2 id="h-fil">Filtros</h2>
+        <label class="switch" for="fActive"><input type="checkbox" id="fActive" checked><i></i><span><b>Cobertura en Scopus hasta 2026</b><br><span class="help">Deja fuera las descontinuadas y las que solo están en DOAJ.</span></span></label>
+        <fieldset class="fs"><legend>Cuartil</legend>
+          <div class="toggles" id="fQ">
+            <button type="button" class="tg" data-q="1" aria-pressed="true"><i style="background:var(--q1)"></i>Q1</button>
+            <button type="button" class="tg" data-q="2" aria-pressed="true"><i style="background:var(--q2)"></i>Q2</button>
+            <button type="button" class="tg" data-q="3" aria-pressed="true"><i style="background:var(--q3)"></i>Q3</button>
+            <button type="button" class="tg" data-q="4" aria-pressed="true"><i style="background:var(--q4)"></i>Q4</button>
+            <button type="button" class="tg" data-q="0" aria-pressed="true"><i style="background:var(--q0)"></i>Scopus sin cuartil</button>
+            <button type="button" class="tg" data-q="d" aria-pressed="false"><i style="background:var(--hue-pale)"></i>Solo DOAJ</button>
+          </div>
+          <span class="help" id="qHelp">Para ver revistas solo DOAJ, apaga el filtro de cobertura Scopus.</span>
+        </fieldset>
+        <label class="lbl" for="fIdx">Indexación
+          <select id="fIdx">
+            <option value="all">Scopus o DOAJ</option>
+            <option value="scopus">En Scopus</option>
+            <option value="doaj">En DOAJ (acceso abierto verificado)</option>
+            <option value="both">En Scopus y DOAJ a la vez</option>
+          </select>
+        </label>
+        <div class="grid2">
+          <label class="lbl" for="fAccess">Acceso y costo
+            <select id="fAccess">
+              <option value="all">Cualquiera</option>
+              <option value="oa">Solo acceso abierto</option>
+              <option value="free">Acceso abierto sin cobro (diamante)</option>
+              <option value="nofee">Sin cobro obligatorio (diamante o suscripción)</option>
+            </select>
+          </label>
+          <label class="lbl" for="fLang">Idioma
+            <select id="fLang">
+              <option value="">Cualquiera</option>
+              <option value="Spanish">Español</option>
+              <option value="English">Inglés</option>
+              <option value="Portuguese">Portugués</option>
+              <option value="French">Francés</option>
+            </select>
+          </label>
+          <label class="lbl wide" for="fRegion">Región de la revista
+            <select id="fRegion">
+              <option value="">Todo el mundo</option>
+              <option value="latam">Latinoamérica</option>
+              <option value="ibero">Iberoamérica (con España y Portugal)</option>
+              <option value="peru">Solo Perú</option>
+            </select>
+          </label>
+        </div>
+        <p class="lbl"><span class="help">El idioma viene de DOAJ. Cuando la revista no lo informa, se estima por su título y país.</span></p>
+      </section>
+      <section class="panel" id="p-prof" aria-labelledby="h-prof">
+        <div class="ph"><h2 id="h-prof">Temas del artículo</h2><span class="aside">peso 1 a 3</span></div>
+        <div class="group"><span class="glabel">Categorías Scopus</span><div class="chips" id="catChips"></div></div>
+        <div class="group"><span class="glabel">Materias DOAJ</span><div class="chips" id="subChips"></div></div>
+        <div class="adder">
+          <label class="lbl" for="addTopic">Añadir categoría o materia
+            <input type="text" id="addTopic" placeholder="Education, Public Administration…" autocomplete="off">
+          </label>
+          <div class="sugg" id="topicSugg" hidden></div>
+        </div>
+        <div class="group"><span class="glabel">Palabras clave</span><div class="chips" id="kwChips"></div></div>
+        <label class="lbl" for="addKw">Añadir palabra clave
+          <input type="text" id="addKw" placeholder="Escribe y pulsa Enter" autocomplete="off">
+        </label>
+      </section>
+
+    </div>
+
+    <section class="results" aria-labelledby="h-res">
+      <div class="ladder">
+        <div class="ph"><h2 id="h-res"><span class="num" id="total">—</span> revistas encajan</h2><span class="aside">Toca un cuartil para incluirlo o quitarlo</span></div>
+        <div class="bar" id="bar" aria-hidden="true"></div>
+        <div class="steps" id="steps"></div>
+      </div>
+
+      <div class="toolbar">
+        <div class="left">
+          <label class="sr" for="fSort">Ordenar</label>
+          <select id="fSort">
+            <option value="fit">Más afines primero</option>
+            <option value="q">Mejor cuartil primero</option>
+            <option value="sjr">Mayor SJR primero</option>
+          </select>
+          <span class="count" id="count"></span>
+          <a class="btn text tofilters" href="#p-fil">Ajustar temas y filtros</a>
+        </div>
+        <div class="right">
+                    <a class="btn" id="toOffer" href="#offer" hidden>Pedir informe</a>
+          <button type="button" class="btn text" id="btnCsv">Descargar CSV</button>
+          <button type="button" class="btn text" id="btnCopy">Copiar</button>
+        </div>
+      </div>
+      <div class="note" id="resStatus" role="status" hidden></div>
+
+      <div class="legend" aria-label="Color de cada portada según el área"><span><i class="f0"></i>Sociales y educación</span><span><i class="f1"></i>Salud</span><span><i class="f2"></i>Ingeniería y computación</span><span><i class="f3"></i>Ciencias naturales</span><span><i class="f4"></i>Humanidades</span><span><i class="f5"></i>Economía y negocios</span></div>
+      <div class="table">
+        <div class="thead" aria-hidden="true"><span>#</span><span></span><span>Revista</span><span>Cuartil</span><span class="r">SJR</span><span>APC</span><span class="r">Afinidad</span></div>
+        <ol class="list" id="list"></ol>
+      </div>
+      <button type="button" class="btn more" id="btnMore" hidden>Ver 25 más</button>
+      <section class="offer" id="offer" aria-labelledby="h-offer" hidden>
+        <div class="offer-txt">
+          <h2 id="h-offer">¿No sabes cuál elegir? Pide tu informe profesional</h2>
+          <p>Revisamos tu artículo y la web de cada revista candidata, y te entregamos en PDF las 5 a 8 mejores opciones verificadas hoy:</p>
+          <ul>
+            <li>Costo real (APC), exoneraciones y tiempos de revisión</li>
+            <li>Si la revista publica trabajos como el tuyo, según sus últimos números</li>
+            <li>Requisitos de formato, extensión e idioma</li>
+            <li>Cuál enviar primero y un plan B si la rechazan</li>
+          </ul>
+        </div>
+        <div class="offer-act">
+          <a class="btn primary" id="offerBtn" href="#" target="_blank" rel="noopener">Pedir informe por WhatsApp</a>
+          <span class="help" id="offerNote">Se abre WhatsApp con tu título y tus 5 revistas más afines.</span>
+          <span class="help">Número: <span id="offerNum" class="num"></span></span>
+        </div>
+      </section>
+      <div class="foot">
+        <p><b>Fuentes.</b> Scopus: SCImago Journal Rank 2025, publicado en 2026, con cuartiles, categorías y cobertura. Acceso abierto: Directory of Open Access Journals (DOAJ), con idiomas, palabras clave y APC.</p>
+        <p><b>Antes de enviar.</b> Confirma en la web de cada revista su alcance, el costo vigente y las normas para autores. Desconfía de revistas que no estén en estas bases y prometan publicación rápida.</p>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm=s=>String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z0-9]+/g," ").trim();
+const STOP=new Set("a al and de del el en for in la las los of on para por the to y e o u con sin un una unos unas como sobre entre da do das dos em no na nas nos com uma um at by an or its from".split(" "));
+const stem=t=>t.length>5&&t.endsWith("es")?t.slice(0,-2):(t.length>4&&t.endsWith("s")?t.slice(0,-1):t);
+const toks=s=>norm(s).split(" ").filter(t=>t&&!STOP.has(t)).map(stem);
+
+const LATAM=new Set(["Argentina","Bolivia","Brazil","Chile","Colombia","Costa Rica","Cuba","Dominican Republic","Ecuador","El Salvador","Guatemala","Honduras","Mexico","Nicaragua","Panama","Paraguay","Peru","Puerto Rico","Uruguay","Venezuela"]);
+const ES_CTY={"United States":"Estados Unidos","United Kingdom":"Reino Unido","Spain":"España","Brazil":"Brasil","Mexico":"México","Peru":"Perú","Netherlands":"Países Bajos","Germany":"Alemania","Switzerland":"Suiza","France":"Francia","Italy":"Italia","Poland":"Polonia","Russia":"Rusia","Turkey":"Turquía","Japan":"Japón","South Korea":"Corea del Sur","Panama":"Panamá","Dominican Republic":"República Dominicana","Belgium":"Bélgica","Sweden":"Suecia","Romania":"Rumania","Ukraine":"Ucrania","Indonesia":"Indonesia","Iran":"Irán","Canada":"Canadá","Portugal":"Portugal","Colombia":"Colombia","Chile":"Chile","Argentina":"Argentina","Ecuador":"Ecuador","Cuba":"Cuba","Venezuela":"Venezuela","Uruguay":"Uruguay","Costa Rica":"Costa Rica"};
+const ES_LANG={English:"Inglés",Spanish:"Español",Portuguese:"Portugués",French:"Francés",German:"Alemán",Italian:"Italiano",Russian:"Ruso",Indonesian:"Indonesio",Catalan:"Catalán",Galician:"Gallego",Polish:"Polaco",Ukrainian:"Ucraniano",Turkish:"Turco",Arabic:"Árabe",Persian:"Persa",Chinese:"Chino",Japanese:"Japonés",Korean:"Coreano",Romanian:"Rumano",Czech:"Checo",Croatian:"Croata",Serbian:"Serbio",Slovenian:"Esloveno",Basque:"Vasco"};
+const ES_REV={"Double anonymous peer review":"Revisión doble ciego","Anonymous peer review":"Revisión ciega","Peer review":"Revisión por pares","Editorial review":"Revisión editorial","Open peer review":"Revisión abierta","Post-publication peer review":"Revisión pospublicación","Committee review":"Revisión por comité","Triple anonymous peer review":"Revisión triple ciego","Crowd review":"Revisión colectiva"};
+const cty=c=>ES_CTY[c]||c;
+
+/* ---------- CONFIGURACIÓN DEL NEGOCIO ----------
+   Escribe tu número de WhatsApp con código de país, solo dígitos (Perú: 51 + 9 dígitos).
+   Mientras esté vacío, el recuadro "Pide tu informe" no se muestra. */
+const NEGOCIO={whatsapp:"51993097406", marca:"Buscador de Revistas"};
+
+/* ---------- example (pre-filled, marked "Ejemplo") ---------- */
+const EXAMPLE={
+  text:"Trazabilidad digital de expedientes académicos en la gestión de posgrado de una universidad pública peruana\n\nResumen: Las escuelas de posgrado de universidades públicas gestionan los expedientes de planes de tesis mediante hojas de cálculo y documentos físicos, lo que dificulta conocer en qué etapa se encuentra cada trámite y genera demoras en la revisión. Este estudio diseñó e implementó una herramienta web de gestión documental para registrar la trazabilidad de los expedientes, desde su presentación hasta la aprobación, en una universidad pública del Perú. Se empleó un enfoque de investigación aplicada con diseño preexperimental. Los resultados muestran una reducción del tiempo promedio de atención y una mejora en la percepción de transparencia por parte de estudiantes y revisores. Se concluye que la transformación digital de los procesos administrativos académicos fortalece la gestión universitaria.\n\nPalabras clave: gestión documental; trazabilidad; transformación digital; educación superior; posgrado.",
+  cats:[["Education",3],["Information Systems and Management",3],["Library and Information Sciences",2],["Public Administration",2],["Management Information Systems",2]],
+  subs:[["Education: Theory and practice of education",2],["Social Sciences: Commerce: Business: Business records management",3],["Bibliography. Library science. Information resources",2],["Political science: Political institutions and public administration (General)",1],["Technology: Technology (General): Industrial engineering. Management engineering: Information technology",2]],
+  kws:["gestión documental","trazabilidad","transformación digital","educación superior","posgrado","gestión universitaria","document management","records management","traceability","digital transformation","higher education","graduate education","university administration","information systems","e-government"]
+};
+
+/* ---------- state ---------- */
+const S={data:null,J:[],prof:{cats:[],subs:[],kws:[]},results:[],shown:25,ai:{},isExample:true,artMeta:null};
+let downloads=null;
+
+/* ---------- data load ---------- */
+async function loadData(){
+  const r=await fetch("data.json"); if(!r.ok) throw new Error("http "+r.status);
+  const obj=await r.json();
+  S.data=obj;
+  const subTok=obj.subs.map(s=>toks(s.replace(/:/g," ")));
+  const catTok=obj.cats.map(c=>toks(c));
+  // subject ancestry: each subject's path prefixes that exist as subjects
+  const subIdx=new Map(obj.subs.map((s,i)=>[s,i]));
+  S.subAnc=obj.subs.map(s=>{const parts=s.split(": "),a=[];for(let k=1;k<parts.length;k++){const p=parts.slice(0,k).join(": ");if(subIdx.has(p))a.push(subIdx.get(p));}return a;});
+  S.subTop=obj.subs.map(s=>s.split(": ")[0]);
+  S.J=obj.J.map((r,i)=>{
+    const cats=r[7]?r[7].split(",").map(x=>{const [c,q]=x.split(":");return [+c,+q];}):[];
+    const kws=r[12]?r[12].split("|"):[];
+    const set=new Set(toks(r[0]));
+    const title=new Set(set);
+    for(const k of kws) for(const t of toks(k)) set.add(t);
+    for(const c of cats) for(const t of catTok[c[0]]) set.add(t);
+    for(const s of r[13]) for(const t of subTok[s]) set.add(t);
+    const c=obj.ctys[r[3]]||"";
+    return {i,t:r[0],issn:r[1],pub:obj.pubs[r[2]]||"",cty:c,q:r[4],sjr:r[5]/1000,h:r[6],cats,fl:r[8],cov:r[9],sid:r[10],did:r[11],kws,subs:r[13],langs:r[14].map(l=>obj.langs[l]),langEst:r[14].length?"":guessLang(r[0],c),apc:r[15],rev:r[16]>=0?obj.revs[r[16]]:"",fam:r[17]??6,set,title,latam:LATAM.has(c)};
+  });
+  const m=obj.meta;
+  $("#fresh").innerHTML=`Datos: <b>SCImago 2025</b> · DOAJ al <b>${fmtDate(m.doaj)}</b><br><span class="num">${fmt(m.n)}</span> revistas, <span class="num">${fmt(m.n_scopus)}</span> en Scopus`;
+}
+const fmt=n=>Number(n).toLocaleString("es-PE");
+const ES_W=new Set("del los las y la el estudios investigacion investigaciones sociedad salud educacion boletin cuadernos anales espanola espanol mexicana colombiana chilena argentina peruana cubana venezolana latinoamericana iberoamericana ciencia ciencias medicina enfermeria psicologia derecho economia historia filosofia politica sociologia ingenieria arquitectura comunicacion universidad gestion desarrollo".split(" "));
+const PT_W=new Set("da do das dos e em saude educacao brasileira brasileiro brasileiros jornal estudos cadernos arquivos portuguesa portugues pesquisa sociedade ciencia ciencias medicina enfermagem psicologia direito economia historia filosofia politica sociologia engenharia arquitetura comunicacao universidade gestao desenvolvimento".split(" "));
+const EN_W=new Set("journal of the and international review research studies science sciences annals bulletin letters advances reports transactions proceedings quarterly society edition".split(" "));
+function guessLang(t,c){
+  const w=norm(t).split(" ");
+  if(/english edition|english ed/.test(norm(t))) return "English";
+  let es=0,pt=0,en=0; for(const x of w){ if(ES_W.has(x)&&!PT_W.has(x)) es++; if(PT_W.has(x)&&!ES_W.has(x)) pt++; if(EN_W.has(x)) en++; }
+  const ib=LATAM.has(c)||c==="Spain"||c==="Portugal";
+  if(es>pt&&es>0&&(ib||es>=2)) return "Spanish";
+  if(pt>es&&pt>0&&(ib||pt>=2)) return "Portuguese";
+  if(w.includes("revista")&&ib) return c==="Brazil"||c==="Portugal"?"Portuguese":"Spanish";
+  if(en>0||/^[a-z0-9 ]+$/.test(norm(t))&&!ib) return "English";
+  return "";
+}
+const langsOf=j=>j.langs.length?j.langs:(j.langEst?[j.langEst]:[]);
+function fmtDate(iso){const [y,mo,d]=iso.split("-");const M=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];return `${+d} ${M[+mo-1]} ${y}`;}
+
+/* ---------- profile UI ---------- */
+function renderProfile(){
+  const P=S.prof, D=S.data;
+  const chip=(label,w,kind,idx)=>`<span class="chip" title="${esc(label)}"><button class="w" data-k="${kind}" data-i="${idx}" aria-label="Cambiar peso de ${esc(label)}">${w}</button><span>${esc(label)}</span><button class="x" data-del="${kind}" data-i="${idx}" aria-label="Quitar ${esc(label)}">×</button></span>`;
+  $("#catChips").innerHTML=P.cats.length?P.cats.map((c,i)=>chip(D.cats[c.id],c.w,"cats",i)).join(""):`<span class="none">Ninguna aún.</span>`;
+  $("#subChips").innerHTML=P.subs.length?P.subs.map((c,i)=>chip(shortSub(D.subs[c.id]),c.w,"subs",i)).join(""):`<span class="none">Ninguna aún.</span>`;
+  $("#kwChips").innerHTML=P.kws.length?P.kws.map((k,i)=>`<span class="chip kw"><span>${esc(k)}</span><button class="x" data-del="kws" data-i="${i}" aria-label="Quitar ${esc(k)}">×</button></span>`).join(""):`<span class="none">Ninguna aún.</span>`;
+}
+const shortSub=s=>{const p=s.split(": ");return p.length>2?p[0]+": … "+p[p.length-1]:s;};
+document.addEventListener("click",e=>{
+  const w=e.target.closest(".w"); if(w){const it=S.prof[w.dataset.k][+w.dataset.i]; it.w=it.w>=3?1:it.w+1; markEdited(); renderProfile(); run(); return;}
+  const d=e.target.closest("[data-del]"); if(d){S.prof[d.dataset.del].splice(+d.dataset.i,1); markEdited(); renderProfile(); run(); return;}
+  if(!e.target.closest(".adder")) $("#topicSugg").hidden=true;
+});
+function markEdited(){ if(S.isExample){S.isExample=false;$("#exTag").hidden=true;} }
+
+// topic adder
+let suggIdx=-1;
+$("#addTopic").addEventListener("input",()=>{
+  const q=norm($("#addTopic").value); const box=$("#topicSugg");
+  if(q.length<2||!S.data){box.hidden=true;return;}
+  const out=[];
+  S.data.cats.forEach((c,i)=>{if(norm(c).includes(q)) out.push({k:"cats",i,l:c,tag:"Scopus"});});
+  S.data.subs.forEach((c,i)=>{if(norm(c).includes(q)) out.push({k:"subs",i,l:c,tag:"DOAJ"});});
+  out.sort((a,b)=>a.l.length-b.l.length);
+  box.innerHTML=out.slice(0,30).map(o=>`<button type="button" data-k="${o.k}" data-i="${o.i}"><small>${o.tag}</small>${esc(o.l)}</button>`).join("")||`<div class="hint" style="padding:8px 10px">Sin coincidencias. Prueba en inglés (ej.: education, health, management).</div>`;
+  box.hidden=false; suggIdx=-1;
+});
+$("#addTopic").addEventListener("keydown",e=>{
+  const bs=[...$("#topicSugg").querySelectorAll("button")]; if(!bs.length) return;
+  if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();suggIdx=(suggIdx+(e.key==="ArrowDown"?1:-1)+bs.length)%bs.length;bs.forEach((b,i)=>b.classList.toggle("on",i===suggIdx));}
+  if(e.key==="Enter"){e.preventDefault();(bs[suggIdx]||bs[0]).click();}
+  if(e.key==="Escape") $("#topicSugg").hidden=true;
+});
+$("#topicSugg").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-k]"); if(!b) return;
+  const k=b.dataset.k, i=+b.dataset.i;
+  if(!S.prof[k].some(x=>x.id===i)) S.prof[k].push({id:i,w:2});
+  $("#addTopic").value=""; $("#topicSugg").hidden=true; markEdited(); renderProfile(); run();
+});
+$("#addKw").addEventListener("keydown",e=>{
+  if(e.key!=="Enter") return; e.preventDefault();
+  const parts=$("#addKw").value.split(/[;,]/).map(s=>s.trim()).filter(Boolean);
+  for(const p of parts) if(!S.prof.kws.some(k=>norm(k)===norm(p))) S.prof.kws.push(p);
+  $("#addKw").value=""; markEdited(); renderProfile(); run();
+});
+
+/* ---------- scoring ---------- */
+function score(){
+  const P=S.prof, J=S.J, N=J.length;
+  const catW=new Map(P.cats.map(c=>[c.id,c.w])), catSum=P.cats.reduce((a,c)=>a+c.w,0);
+  const subSum=P.subs.reduce((a,c)=>a+c.w,0);
+  // keywords: token stems, idf by document frequency of a full match
+  const K=P.kws.map(k=>({k,t:[...new Set(toks(k))]})).filter(x=>x.t.length);
+  const df=K.map(()=>0);
+  for(const j of J) K.forEach((x,ki)=>{if(x.t.every(t=>j.set.has(t))) df[ki]++;});
+  K.forEach((x,ki)=>{x.idf=Math.log((N+1)/(df[ki]+1));});
+  const kwSum=K.reduce((a,x)=>a+x.idf,0);
+  const out=[];
+  let maxKw=0;
+  for(const j of J){
+    let cs=0, mc=[];
+    if(catSum){ for(const [c,q] of j.cats){const w=catW.get(c); if(w){cs+=w; mc.push([c,q]);} }
+      if(cs){ cs=cs/catSum*(0.75+0.25*mc.length/j.cats.length); } }
+    let ss=0, ms=[];
+    if(subSum && j.subs.length){
+      for(const a of P.subs){ let best=0;
+        for(const b of j.subs){ let v=0;
+          if(a.id===b) v=1; else if(S.subAnc[b].includes(a.id)||S.subAnc[a.id].includes(b)) v=.6; else if(S.subTop[a.id]===S.subTop[b]) v=.15;
+          if(v>best) best=v; }
+        if(best>=.6) ms.push(a.id);
+        ss+=a.w*best; }
+      ss/=subSum; }
+    let ks=0, mk=[];
+    if(kwSum){ for(const x of K){ let hit=0;
+        for(const t of x.t) if(j.set.has(t)) hit++;
+        const f=hit/x.t.length;
+        if(f===1){ const inTitle=x.t.every(t=>j.title.has(t)); ks+=x.idf*(inTitle?1.3:1); mk.push(x.k); }
+        else if(f>=.5) ks+=x.idf*.3*f; }
+      ks/=kwSum; if(ks>maxKw) maxKw=ks; }
+    const topical=Math.max(cs, ss*.9);
+    if(topical<=0 && ks<=0) continue;
+    out.push({j,cs,ss,ks,topical,mc,ms,mk});
+  }
+  const hasT=catSum+subSum>0, hasK=kwSum>0;
+  for(const o of out){
+    const kn=maxKw?o.ks/maxKw:0;
+    o.s=hasT&&hasK? .45*o.topical+.55*kn : hasT? o.topical : kn;
+  }
+  out.sort((a,b)=>b.s-a.s);
+  return out;
+}
+
+/* ---------- filters ---------- */
+S.qsel=new Set(["1","2","3","4","0"]);
+function readFilters(){
+  return {active:$("#fActive").checked, idx:$("#fIdx").value, acc:$("#fAccess").value, lang:$("#fLang").value, reg:$("#fRegion").value};
+}
+const qkey=j=>(j.fl&1)?String(j.q):"d";
+function passes(o,F){
+  const j=o.j;
+  const scopus=j.fl&1, doaj=j.fl&8;
+  if(F.active && !(scopus && j.cov>=2026)) return false;
+  if(F.idx==="scopus"&&!scopus) return false;
+  if(F.idx==="doaj"&&!doaj) return false;
+  if(F.idx==="both"&&!(scopus&&doaj)) return false;
+  const oa=(j.fl&2)||doaj, free=(doaj&&!(j.fl&16))||(j.fl&4);
+  if(F.acc==="oa"&&!oa) return false;
+  if(F.acc==="free"&&!free) return false;
+  if(F.acc==="nofee"&&!(free||!oa)) return false;
+  if(F.lang && !langsOf(j).includes(F.lang)) return false;
+  if(F.reg==="latam"&&!j.latam) return false;
+  if(F.reg==="ibero"&&!(j.latam||j.cty==="Spain"||j.cty==="Portugal")) return false;
+  if(F.reg==="peru"&&j.cty!=="Peru") return false;
+  return true;
+}
+
+/* ---------- render ---------- */
+let scored=[];
+function run(){
+  if(!S.J.length) return;
+  scored=score(); S.ai={}; applyFilters();
+}
+function applyFilters(){
+  const F=readFilters(); let base=scored.filter(o=>passes(o,F));
+  const top=base.length?base[0].s:1;
+  base=base.filter(o=>o.s>=top*.12);
+  const counts={"1":0,"2":0,"3":0,"4":0,"0":0,"d":0};
+  base.forEach(o=>counts[qkey(o.j)]++);
+  let r=base.filter(o=>S.qsel.has(qkey(o.j)));
+  const best=r.length?r[0].s:1;
+  const sort=$("#fSort").value;
+  if(sort!=="fit"){ const pool=r.slice(0,150);
+    r= sort==="q"? pool.sort((a,b)=>((a.j.q||9)-(b.j.q||9))||b.s-a.s) : pool.sort((a,b)=>b.j.sjr-a.j.sjr||b.s-a.s); }
+  r.forEach(o=>o.rel=o.s/best);
+  S.results=r; S.counts=counts; S.F=F; S.shown=25; S.open=new Set(); render();
+}
+const QK=[["1","Q1","var(--q1)"],["2","Q2","var(--q2)"],["3","Q3","var(--q3)"],["4","Q4","var(--q4)"],["0","Sin cuartil","var(--q0)"],["d","Solo DOAJ","var(--hue-pale)"]];
+function qchip(j){ if(!(j.fl&1)) return `<span class="qc q0" title="No está en Scopus">DOAJ</span>`; return j.q?`<span class="qc q${j.q}">Q${j.q}</span>`:`<span class="qc q0">s/c</span>`; }
+function render(){
+  const r=S.results, c=S.counts||{}, F=S.F||{};
+  const sum=QK.reduce((a,[k])=>a+(c[k]||0),0);
+  $("#total").textContent=fmt(r.length);
+  $("#bar").innerHTML=QK.filter(([k])=>c[k]).map(([k,,col])=>`<span style="flex:${c[k]} 1 0;background:${col}" class="${S.qsel.has(k)?"":"off"}"></span>`).join("");
+  $("#steps").innerHTML=QK.map(([k,lab,col])=>{const avail=k!=="d"||!F.active;
+    return `<button type="button" class="step" data-q="${k}" aria-pressed="${S.qsel.has(k)}"${avail?"":" disabled"}><span class="k"><i style="background:${col}"></i>${lab}</span><span class="v">${avail?fmt(c[k]||0):"—"}</span></button>`;}).join("");
+  const sortNote=$("#fSort").value==="fit"?"":" entre las 150 más afines";
+  document.querySelectorAll("#fQ .tg").forEach(b=>{const k=b.dataset.q;b.setAttribute("aria-pressed",S.qsel.has(k));if(k==="d")b.disabled=!!F.active;});
+  $("#qHelp").hidden=!F.active;
+  $("#count").textContent=r.length?`Mostrando ${fmt(Math.min(S.shown,r.length))} de ${fmt(r.length)}${sortNote}`:"";
+  const f=$("#finding");
+  if(r.length){ const t=r[0].j; f.innerHTML=`${fmt(r.length)} revistas${F.active?" con cobertura Scopus hasta 2026":""} encajan con tu artículo. <span class="muted">La más afín es</span> ${esc(t.t)}${t.fl&1&&t.q?` <span class="muted">(Q${t.q})</span>`:""}.`; }
+  else f.textContent=sum?"Ninguna revista queda con los cuartiles elegidos.":"Ninguna revista cumple estos filtros todavía.";
+  if(!r.length){
+    const noProf=!S.prof.cats.length&&!S.prof.subs.length&&!S.prof.kws.length;
+    $("#list").innerHTML=`<li class="empty">${noProf?"Analiza tu artículo con IA o añade al menos una categoría o palabra clave.":sum?"Activa más cuartiles arriba para ver revistas.":"Ninguna revista cumple todos los filtros. Prueba a quitar el idioma o ampliar la región."}</li>`;
+    $("#btnMore").hidden=true; return;
+  }
+  $("#list").innerHTML=r.slice(0,S.shown).map((o,n)=>row(o,n)).join("");
+  const wa=String(NEGOCIO.whatsapp||"").replace(/\D/g,"");
+  $("#offer").hidden=!wa; $("#toOffer").hidden=!wa;
+  if(wa){
+    const art=$("#art").value.trim().split("\n").find(x=>x.trim())||"";
+    const msg=`Hola, quiero un informe de revistas para mi artículo.\n\nTítulo: ${art.slice(0,200)}\n\nRevistas más afines en el Buscador:\n`+r.slice(0,5).map((o,k)=>`${k+1}. ${o.j.t}${o.j.fl&1&&o.j.q?" (Q"+o.j.q+")":""}`).join("\n");
+    $("#offerBtn").href=`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`;
+    $("#offerNum").textContent="+"+wa;
+  }
+  $("#btnMore").hidden=S.shown>=r.length;
+}
+const FAMN=["Ciencias sociales y educación","Salud","Ingeniería y computación","Ciencias naturales y de la vida","Artes y humanidades","Economía y negocios","Multidisciplinaria"];
+const ISTOP=new Set("of the and de del la las los el y e en for in on to da do das dos des et und der die a an journal revista".split(" "));
+function initials(t){const w=norm(t).split(" ").filter(x=>x&&!ISTOP.has(x)&&!/^\d+$/.test(x));const src=w.length?w:norm(t).split(" ");return esc(src.slice(0,3).map(x=>x[0]).join("").toUpperCase()||"·");}
+function siteUrl(j){const iss=(j.issn||"").split(" ")[0];return "https://duckduckgo.com/?q="+encodeURIComponent("!ducky "+j.t+(iss?" "+iss:"")+" journal");}
+function apcText(j){ if(j.fl&8) return j.fl&16?esc(j.apc):"Sin APC"; if(j.fl&4) return "Sin APC"; if(j.fl&2) return ""; return "Suscripción"; }
+const APC_TIP=j=>(j.fl&8)||(j.fl&4)?"":(j.fl&2)?"Revista de acceso abierto que no informa su APC en estas bases: revisa su web":"Revista por suscripción: publicar suele ser gratis; el acceso abierto opcional tiene costo";
+function row(o,n){
+  const j=o.j, D=S.data, scopus=j.fl&1, doaj=j.fl&8, open=S.open.has(j.i);
+  const url=scopus?`https://www.scimagojr.com/journalsearch.php?q=${j.sid}&tip=sid`:`https://doaj.org/toc/${j.did}`;
+  const g=`https://www.google.com/search?q=${encodeURIComponent('"'+j.t+'" author guidelines')}`;
+  const site=siteUrl(j);
+  const pct=Math.round(o.rel*100), ai=S.ai[j.i];
+  const m=[...o.mc.map(([c])=>D.cats[c]),...o.ms.map(s=>shortSub(D.subs[s])),...o.mk];
+  const apc=apcText(j);
+  const meta=[esc(j.pub),esc(cty(j.cty))].filter(Boolean).join(" · ");
+  const line2=ai?`<span class="sub why"><b>${esc(ai.encaje)}.</b> <em>${esc(ai.motivo)}</em></span>`:(m.length?`<span class="sub why"><em>Coincide en</em> ${m.slice(0,4).map(esc).join(" · ")}</span>`:"");
+  let det="";
+  if(open){
+    const kv=[];
+    kv.push(["Indexación",[scopus?"Scopus":"",doaj?"DOAJ":""].filter(Boolean).join(" y ")]);
+    if(scopus) kv.push(["Cobertura Scopus",j.cov>=2026?`hasta ${j.cov}`:`<span class="warnc">hasta ${j.cov||"—"}</span>`],["SJR 2025 · índice H",`<span class="num">${j.sjr.toFixed(2)} · ${j.h}</span>`]);
+    kv.push(["Acceso",((j.fl&2)||doaj)?"Abierto":"Suscripción o híbrido"],["Costo para el autor",apc==="Suscripción"?"Publicar suele ser gratis; el acceso abierto opcional se paga (revisar en la web)":(apc||'<span class="muted">No informado: revisar en la web</span>')]);
+    if(doaj&&(j.fl&32)&&(j.fl&16)) kv.push(["Exoneraciones","Sí, para autores de países en desarrollo"]);
+    kv.push(["Idiomas",j.langs.length?j.langs.map(l=>ES_LANG[l]||l).join(", "):(j.langEst?`${ES_LANG[j.langEst]} <span class="muted">(estimado por el título)</span>`:"No informado")]);
+    if(j.rev) kv.push(["Revisión",ES_REV[j.rev]||j.rev]);
+    if(j.issn) kv.push(["ISSN",`<span class="issn">${esc(j.issn)}</span>`]);
+    const cats=j.cats.map(([c,q])=>esc(D.cats[c])+(q?" Q"+q:"")).join(" · ");
+    det=`<div class="detail">
+      <dl class="kv">${kv.map(([k,v])=>`<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>
+      ${cats?`<div class="matches"><span>Categorías:</span> ${cats}</div>`:""}
+      ${m.length?`<div class="matches"><span>Coincide con tu artículo en:</span> ${m.map(esc).join(" · ")}</div>`:""}
+      ${ai&&ai.cuidado?`<div class="ai"><b>A tener en cuenta:</b> ${esc(ai.cuidado)}</div>`:""}
+      <div class="links">${scopus?`<a href="${url}" target="_blank" rel="noopener">Ficha en SCImago</a>`:""}${doaj?`<a href="https://doaj.org/toc/${j.did}" target="_blank" rel="noopener">Ficha en DOAJ</a>`:""}<a href="${site}" target="_blank" rel="noopener">Sitio web de la revista</a><a href="${g}" target="_blank" rel="noopener">Buscar normas para autores</a></div>
+    </div>`;
+  }
+  return `<li class="${open?"open":""}">
+    <div class="rhead" data-i="${j.i}">
+      <span class="rk">${n+1}</span>
+      <span class="cover f${j.fam}" title="${FAMN[j.fam]}" aria-hidden="true"><b>${initials(j.t)}</b><small>${scopus?(j.q?"Q"+j.q:"Scopus"):"OA"}</small></span>
+      <span class="idc"><a class="jt" href="${site}" target="_blank" rel="noopener" title="Abrir el sitio web de la revista">${esc(j.t)}<svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></a><span class="sub meta">${meta}</span>${line2}<button type="button" class="btn text more-btn" data-i="${j.i}" aria-expanded="${open}">${open?"Ocultar ficha":"Ver ficha"}</button></span>
+      ${qchip(j)}
+      <span class="cell r c-sjr">${scopus?j.sjr.toFixed(2):'<span class="dim">—</span>'}</span>
+      <span class="cell c-apc ${apc&&apc!=="Suscripción"?"":"dim"}" title="${APC_TIP(j)}">${apc||"Revisar"}</span>
+      <span class="aff" title="Afinidad relativa a la revista más afín"><i><b style="width:${pct}%"></b></i><span>${pct}%</span></span>
+    </div>${det}</li>`;
+}
+document.addEventListener("click",e=>{
+  if(e.target.closest("a")) return;
+  const h=e.target.closest(".rhead[data-i]"); if(h){const i=+h.dataset.i; S.open.has(i)?S.open.delete(i):S.open.add(i); render(); return;}
+  const st=e.target.closest(".step,#fQ .tg"); if(st&&!st.disabled){const k=st.dataset.q; S.qsel.has(k)?S.qsel.delete(k):S.qsel.add(k); applyFilters();}
+});
+$("#btnMore").addEventListener("click",()=>{S.shown+=25;render();});
+document.querySelectorAll("#fAccess,#fLang,#fRegion,#fSort,#fActive,#fIdx").forEach(el=>el.addEventListener("change",()=>{if(S.J.length)applyFilters();}));
+
+/* ---------- file reading ---------- */
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement("script");s.src=src;s.onload=res;s.onerror=()=>rej(new Error("No se pudo cargar el lector de archivos."));document.head.appendChild(s);});}
+async function readPdf(file){
+  if(!window.pdfjsLib){
+    await loadScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js");
+    await loadScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js");
+  }
+  const pdf=await pdfjsLib.getDocument({data:new Uint8Array(await file.arrayBuffer()),isEvalSupported:false}).promise;
+  let out=""; const n=Math.min(pdf.numPages,6);
+  for(let p=1;p<=n;p++){const pg=await pdf.getPage(p);const tc=await pg.getTextContent();out+=tc.items.map(i=>i.str+(i.hasEOL?"\n":" ")).join("")+"\n\n";}
+  return out;
+}
+async function readDocx(file){
+  if(!window.mammoth) await loadScript("https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js");
+  const r=await mammoth.extractRawText({arrayBuffer:await file.arrayBuffer()});
+  return r.value;
+}
+$("#file").addEventListener("change",async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  setStatus("#artStatus",`<span class="spin"></span>Leyendo ${esc(f.name)}…`);
+  try{
+    const ext=f.name.split(".").pop().toLowerCase();
+    let txt= ext==="pdf"? await readPdf(f) : ext==="docx"? await readDocx(f) : await f.text();
+    txt=txt.replace(/[ \t]+\n/g,"\n").replace(/\n{3,}/g,"\n\n").trim();
+    if(txt.length<80) throw new Error("No encontré texto en el archivo. Si es un PDF escaneado, copia y pega el resumen.");
+    $("#art").value=txt.slice(0,20000); markEdited();
+    setStatus("#artStatus",`Texto cargado (${txt.length.toLocaleString("es-PE")} caracteres). Ahora pulsa <b>Buscar revistas</b>.`);
+  }catch(err){ setStatus("#artStatus",esc(err.message||"No se pudo leer el archivo."),true); }
+  e.target.value="";
+});
+function setStatus(sel,html,warn){const el=$(sel);el.innerHTML=html;el.classList.toggle("warn",!!warn);el.hidden=!html;}
+$("#art").addEventListener("input",markEdited);
+const drop=$(".drop");
+["dragenter","dragover"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("over");}));
+["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,()=>drop.classList.remove("over")));
+drop.addEventListener("drop",e=>{e.preventDefault();const f=e.dataTransfer&&e.dataTransfer.files[0];if(!f)return;const dt=new DataTransfer();dt.items.add(f);$("#file").files=dt.files;$("#file").dispatchEvent(new Event("change"));});
+
+$("#btnAnalyze").addEventListener("click",()=>{
+  const txt=$("#art").value.trim();
+  if(txt.length<40){setStatus("#artStatus","Pega al menos el título, el resumen y las palabras clave del artículo.",true);return;}
+  if(!S.data){setStatus("#artStatus","El catálogo aún se está cargando. Espera unos segundos.",true);return;}
+  const kws=[];
+  const re=/(?:palabras[\s-]*clave|keywords?|key\s*words|palavras[\s-]*chave|descriptores)\s*[:：.\-–]\s*([^\n]+)/gi;
+  let m; while((m=re.exec(txt))){ for(const p of m[1].split(/[;,·•|]/)){ const k=p.replace(/[.\s]+$/,"").trim(); if(k.length>1&&k.length<60&&!kws.some(x=>norm(x)===norm(k))) kws.push(k); } }
+  let note;
+  if(kws.length){ note=`Encontré ${kws.length} palabras clave en el texto.`; }
+  else{
+    const cnt=new Map(); for(const t of norm(txt).split(" ")) if(t.length>5&&!STOP.has(t)) cnt.set(t,(cnt.get(t)||0)+1);
+    [...cnt.entries()].filter(([,n])=>n>1).sort((a,b)=>b[1]-a[1]).slice(0,8).forEach(([t])=>kws.push(t));
+    note=kws.length?`El texto no trae una línea de palabras clave; usé los ${kws.length} términos más repetidos.`:"No pude extraer términos del texto.";
+  }
+  S.prof={cats:[],subs:[],kws:kws.slice(0,20)};
+  // Infer the article's subject areas from the journals that best match its keywords
+  const seed=score().slice(0,60), cw=new Map(), sw=new Map();
+  for(const o of seed){ const w=o.s;
+    for(const [c] of o.j.cats) cw.set(c,(cw.get(c)||0)+w/o.j.cats.length);
+    for(const t of o.j.subs) sw.set(t,(sw.get(t)||0)+w/o.j.subs.length); }
+  const pick=(m,max)=>{const arr=[...m.entries()].sort((a,b)=>b[1]-a[1]); if(!arr.length) return []; const top=arr[0][1];
+    return arr.filter(([,v])=>v>=top*.3).slice(0,max).map(([id,v],i)=>({id,w:v>=top*.7?3:v>=top*.45?2:1}));};
+  S.prof.cats=pick(cw,5); S.prof.subs=pick(sw,3);
+  markEdited(); renderProfile(); run();
+  const nc=S.prof.cats.length+S.prof.subs.length;
+  setStatus("#artStatus",`${esc(note)}${nc?` Según las revistas que publican esos temas, propuse ${nc} áreas en <b>Temas del artículo</b>; quita las que no correspondan.`:""} Añadir 2 o 3 palabras clave en inglés mejora los resultados.`);
+});
+const dedupe=a=>{const m=new Map();for(const x of a) if(!m.has(x.id)) m.set(x.id,x);return [...m.values()];};
+
+/* ---------- export ---------- */
+function rowsOut(){
+  const D=S.data;
+  const head=["Puesto","Revista","Afinidad (%)","Editorial","País","ISSN","Indexación","Cuartil","Cobertura Scopus hasta","SJR","H-index","Acceso abierto","Costo para el autor","Idiomas","Coincidencias","Ficha"];
+  const rows=S.results.slice(0,100).map((o,n)=>{const j=o.j;return [n+1,j.t,Math.round(o.rel*100),j.pub,cty(j.cty),j.issn,[j.fl&1?"Scopus":"",j.fl&8?"DOAJ":""].filter(Boolean).join(" + "),j.fl&1?(j.q?"Q"+j.q:"sin cuartil"):"",j.fl&1?j.cov:"",j.fl&1?j.sjr.toFixed(3):"",j.fl&1?j.h:"",((j.fl&2)||(j.fl&8))?"Sí":"No",(apcText(j)||"Revisar en la web").replace(/&amp;/g,"&"),langsOf(j).map(l=>ES_LANG[l]||l).join(", ")+(j.langs.length||!j.langEst?"":" (estimado)"),[...o.mc.map(([c])=>D.cats[c]),...o.mk].join("; "),j.fl&1?`https://www.scimagojr.com/journalsearch.php?q=${j.sid}&tip=sid`:`https://doaj.org/toc/${j.did}`];});
+  return [head,...rows];
+}
+$("#btnCsv").addEventListener("click",async()=>{
+  if(!S.results.length) return;
+  const csv="﻿"+rowsOut().map(r=>r.map(v=>{v=String(v??"");return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}).join(";")).join("\r\n");
+  if(!downloads){
+    if(window.claude){setStatus("#resStatus","Esta vista no permite descargar archivos. Usa <b>Copiar</b> y pégala en Excel.",true);return;}
+    const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+    const a=document.createElement("a"); a.href=url; a.download="revistas-candidatas.csv"; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),2000);
+    setStatus("#resStatus","Lista descargada como revistas-candidatas.csv (se abre en Excel)."); return;
+  }
+  try{ await downloads.save({filename:"revistas-candidatas.csv",data:new Blob([csv],{type:"text/csv"})}); setStatus("#resStatus","Lista guardada como revistas-candidatas.csv (se abre en Excel)."); }
+  catch(e){ if(e&&e.code!=="cancelled"&&e.code!=="declined") setStatus("#resStatus","No se pudo guardar el archivo. Usa <b>Copiar lista</b> y pégala en Excel.",true); }
+});
+$("#btnCopy").addEventListener("click",()=>{
+  if(!S.results.length) return;
+  const tsv=rowsOut().map(r=>r.map(v=>String(v??"").replace(/[\t\n]/g," ")).join("\t")).join("\n");
+  navigator.clipboard.writeText(tsv).then(()=>setStatus("#resStatus","Lista copiada. Pégala en Excel o Google Sheets."),()=>{
+    const ta=document.createElement("textarea");ta.value=tsv;document.body.appendChild(ta);ta.select();
+    let ok=false;try{ok=document.execCommand("copy");}catch(_){}ta.remove();
+    setStatus("#resStatus",ok?"Lista copiada. Pégala en Excel o Google Sheets.":"No se pudo copiar. Usa Descargar lista (CSV).",!ok);
+  });
+});
+
+/* ---------- boot ---------- */
+$("#art").value=EXAMPLE.text;
+$("#list").innerHTML=Array.from({length:6},()=>`<li><div class="rhead" style="cursor:default"><span class="skel" style="width:14px"></span><span class="skel" style="width:52px;height:70px"></span><span class="idc"><span class="skel" style="width:70%"></span><span class="skel" style="width:45%;height:12px"></span></span><span class="skel" style="width:32px;height:22px"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span></div></li>`).join("");
+(async()=>{
+  try{ await loadData(); }
+  catch(e){ $("#list").innerHTML=`<li class="empty">No se pudo cargar el catálogo de revistas. Recarga la página para intentarlo otra vez.</li>`; $("#finding").textContent="El catálogo no cargó."; return; }
+  const D=S.data, ci=new Map(D.cats.map((c,i)=>[c,i])), si=new Map(D.subs.map((c,i)=>[c,i]));
+  S.prof={cats:EXAMPLE.cats.filter(([n])=>ci.has(n)).map(([n,w])=>({id:ci.get(n),w})),subs:EXAMPLE.subs.filter(([n])=>si.has(n)).map(([n,w])=>({id:si.get(n),w})),kws:EXAMPLE.kws.slice()};
+  renderProfile(); run();
+})();
+(async()=>{
+  if(!window.claude||!claude.use) return;
+  try{ downloads=await claude.use("downloads"); }catch(_){ downloads=null; }
+})();
+renderProfile();
+})();
+</script>
+
+</body>
+</html>
