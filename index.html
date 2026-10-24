@@ -33,6 +33,7 @@
 }
 :root[data-theme="dark"]{color-scheme:light}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html{background:var(--ground);-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{background:var(--ground);color:var(--text);font-family:var(--font);font-size:var(--fs-body);line-height:20px;-webkit-font-smoothing:antialiased}
 .col{max-width:1160px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
@@ -211,12 +212,27 @@ li.open .rhead{background:var(--active)}
 .empty{padding:28px 20px;text-align:center;color:var(--muted);font-size:14px}
 .skel{display:block;height:14px;border-radius:3px;background:var(--raised)}
 .more{align-self:center}
-.offer{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-card);padding:var(--pad);display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:16px 24px;align-items:center}
-.offer h2{font-size:18px;line-height:24px;font-weight:700}
-.offer p{margin:6px 0 8px;font-size:14px;line-height:20px}
-.offer ul{margin:0;padding-left:18px;font-size:14px;line-height:22px}
-.offer-act{display:flex;flex-direction:column;gap:8px}
-.offer-act .help{font-size:var(--fs-small);line-height:16px;color:var(--muted)}
+.offer{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-card);padding:var(--pad);display:flex;flex-direction:column;gap:16px}
+.offer h2{font-size:20px;line-height:26px;font-weight:700}
+.offer-head p{margin:6px 0 0;font-size:14px;line-height:20px;color:var(--muted);max-width:68ch}
+.plans{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--gap)}
+.plan{border:1px solid var(--border);border-radius:var(--radius-card);padding:16px;display:flex;flex-direction:column;gap:10px;background:var(--surface)}
+.plan.rec{border:2px solid var(--hue);padding:15px}
+.plan .top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.plan h3{font-size:16px;line-height:22px;margin:0;font-weight:700}
+.plan .tag{font-size:var(--fs-small);font-weight:500;color:#fff;background:var(--hue);border-radius:var(--radius-chip);padding:2px 8px;white-space:nowrap}
+.plan .price{display:flex;align-items:baseline;gap:6px}
+.plan .price b{font-size:28px;line-height:32px;font-weight:700;font-variant-numeric:tabular-nums}
+.plan .price span{font-size:13px;color:var(--muted)}
+.plan .time{font-size:13px;color:var(--muted)}
+.plan ul{margin:0;padding-left:18px;font-size:14px;line-height:21px;flex:1}
+.plan .btn{align-self:stretch}
+.extras h3{font-size:15px;margin:0 0 6px;font-weight:700}
+.extras ul{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 16px;font-size:14px;line-height:20px}
+.extras li{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--rule);padding-bottom:6px}
+.extras li b{font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
+.fine{margin:0;font-size:13px;line-height:18px;color:var(--muted)}
+@media (max-width:640px){.plans,.extras ul{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:640px){.offer{grid-template-columns:minmax(0,1fr)}}
 .foot{font-size:13px;line-height:20px;color:var(--muted);padding:4px 2px}
 .foot p{margin:0 0 6px}
@@ -379,7 +395,7 @@ li.open .rhead{background:var(--active)}
           <a class="btn text tofilters" href="#p-fil">Ajustar temas y filtros</a>
         </div>
         <div class="right">
-                    <a class="btn" id="toOffer" href="#offer" hidden>Pedir informe</a>
+                    <a class="btn" id="toOffer" href="#offer">Ver servicios y precios</a>
           <button type="button" class="btn text" id="btnCsv">Descargar CSV</button>
           <button type="button" class="btn text" id="btnCopy">Copiar</button>
         </div>
@@ -392,22 +408,17 @@ li.open .rhead{background:var(--active)}
         <ol class="list" id="list"></ol>
       </div>
       <button type="button" class="btn more" id="btnMore" hidden>Ver 25 más</button>
-      <section class="offer" id="offer" aria-labelledby="h-offer" hidden>
-        <div class="offer-txt">
-          <h2 id="h-offer">¿No sabes cuál elegir? Pide tu informe profesional</h2>
-          <p>Revisamos tu artículo y la web de cada revista candidata, y te entregamos en PDF las 5 a 8 mejores opciones verificadas hoy:</p>
-          <ul>
-            <li>Costo real (APC), exoneraciones y tiempos de revisión</li>
-            <li>Si la revista publica trabajos como el tuyo, según sus últimos números</li>
-            <li>Requisitos de formato, extensión e idioma</li>
-            <li>Cuál enviar primero y un plan B si la rechazan</li>
-          </ul>
+      <section class="offer" id="offer" aria-labelledby="h-offer">
+        <div class="offer-head">
+          <h2 id="h-offer">Servicios y precios</h2>
+          <p>La lista te dice dónde podrías publicar. Nosotros verificamos cada revista y te decimos dónde conviene publicar y cómo hacerlo. Precios en soles; pago por Yape, Plin o transferencia.</p>
         </div>
-        <div class="offer-act">
-          <a class="btn primary" id="offerBtn" href="#" target="_blank" rel="noopener">Pedir informe por WhatsApp</a>
-          <span class="help" id="offerNote">Se abre WhatsApp con tu título y tus 5 revistas más afines.</span>
-          <span class="help">Número: <span id="offerNum" class="num"></span></span>
+        <div class="plans" id="plans"></div>
+        <div class="extras">
+          <h3>Extras</h3>
+          <ul id="extras"></ul>
         </div>
+        <p class="fine">No garantizamos la aceptación: esa decisión es de cada revista. Trabajamos sobre la forma, la selección y el envío; no redactamos el contenido científico del artículo.</p>
       </section>
       <div class="foot">
         <p><b>Revistas</b> es una herramienta de <b>INDEX Lab</b> para investigadores y autores.</p>
@@ -437,7 +448,18 @@ const cty=c=>ES_CTY[c]||c;
 /* ---------- CONFIGURACIÓN DEL NEGOCIO ----------
    Escribe tu número de WhatsApp con código de país, solo dígitos (Perú: 51 + 9 dígitos).
    Mientras esté vacío, el recuadro "Pide tu informe" no se muestra. */
-const NEGOCIO={whatsapp:"51993097406", marca:"INDEX Lab Revistas"};
+const NEGOCIO={wa:["406","097","993","51"], marca:"INDEX Lab"};   // número de WhatsApp guardado al revés en partes, para que no aparezca escrito en la página
+const TARIFAS=[
+  {id:"esencial", nombre:"Informe Esencial", precio:59, tiempo:"Entrega en 48 horas",
+   items:["5 revistas verificadas hoy en su web","Cuartil, cobertura Scopus, APC e idioma de cada una","Cuál enviar primero y por qué","Informe en PDF"]},
+  {id:"completo", nombre:"Informe Completo", precio:99, tiempo:"Entrega en 48 a 72 horas", rec:true,
+   items:["8 revistas verificadas, con su alcance revisado en sus últimos números","Tiempos de revisión, exoneraciones y requisitos de formato","Plan A y plan B si la rechazan","Dudas resueltas por WhatsApp durante 7 días"]},
+  {id:"adecuacion", nombre:"Adecuación a la revista", precio:180, tiempo:"Entrega en 3 a 5 días",
+   items:["Tu manuscrito en la plantilla y estructura de la revista elegida","Referencias en el estilo que exige (APA, Vancouver, etc.)","Revisión de extensión, tablas y figuras","Hasta 8 000 palabras"]},
+  {id:"paquete", nombre:"Paquete Envío", precio:249, tiempo:"Entrega en 5 a 7 días", antes:279,
+   items:["Informe Completo + Adecuación a la revista","Carta al editor y declaraciones que pide la revista","Acompañamiento en el envío por la plataforma de la revista","Ayuda para organizar la respuesta a los revisores"]}
+];
+const EXTRAS=[["Entrega urgente en 24 horas","+40 %"],["Revisión de referencias (hasta 60)","S/ 60"],["Organizar la respuesta a revisores","S/ 120"],["Universidades y grupos de investigación","Cotización"]];
 
 /* ---------- example (pre-filled, marked "Ejemplo") ---------- */
 
@@ -814,6 +836,25 @@ function applyFilters(){
 const QK=[["1","Q1","var(--q1)"],["2","Q2","var(--q2)"],["3","Q3","var(--q3)"],["4","Q4","var(--q4)"],["0","Sin cuartil","var(--q0)"],["d","Solo DOAJ","var(--hue-pale)"]];
 function qchip(j){ if(!(j.fl&1)) return `<span class="qc q0" title="No está en Scopus">DOAJ</span>`; return j.q?`<span class="qc q${j.q}">Q${j.q}</span>`:`<span class="qc q0">s/c</span>`; }
 const noArt=()=>!S.prof.cats.length&&!S.prof.subs.length&&!S.prof.kws.length&&!(S.prof.topics||[]).length;
+function waLink(plan){
+  const n=NEGOCIO.wa.slice().reverse().join("");
+  const art=splitArticle($("#art").value.trim()).title;
+  let msg=`Hola, me interesa el servicio "${plan}" de INDEX Lab.`;
+  if(art) msg+=`\n\nTítulo de mi artículo: ${art.slice(0,200)}`;
+  if(S.results.length) msg+=`\n\nRevistas más afines en INDEX Lab Revistas:\n`+S.results.slice(0,5).map((o,k)=>`${k+1}. ${o.j.t}${o.j.fl&1&&o.j.q?" (Q"+o.j.q+")":""}`).join("\n");
+  return `https://wa.me/${n}?text=${encodeURIComponent(msg)}`;
+}
+function renderPlans(){
+  $("#plans").innerHTML=TARIFAS.map(p=>`<article class="plan${p.rec?" rec":""}">
+    <div class="top"><h3>${esc(p.nombre)}</h3>${p.rec?'<span class="tag">Recomendado</span>':""}</div>
+    <div class="price"><b>S/ ${p.precio}</b>${p.antes?`<span>en lugar de S/ ${p.antes}</span>`:""}</div>
+    <div class="time">${esc(p.tiempo)}</div>
+    <ul>${p.items.map(i=>`<li>${esc(i)}</li>`).join("")}</ul>
+    <a class="btn ${p.rec?"primary":""}" data-plan="${esc(p.nombre)}" href="#" target="_blank" rel="noopener">Pedir por WhatsApp</a>
+  </article>`).join("");
+  $("#extras").innerHTML=EXTRAS.map(([a,b])=>`<li><span>${esc(a)}</span><b>${esc(b)}</b></li>`).join("");
+}
+document.addEventListener("click",e=>{const a=e.target.closest("a[data-plan]"); if(a) a.href=waLink(a.dataset.plan);});   // built at click time with the current article and results
 function render(){
   const r=S.results, c=S.counts||{}, F=S.F||{};
   const sum=QK.reduce((a,[k])=>a+(c[k]||0),0);
@@ -834,14 +875,6 @@ function render(){
     $("#btnMore").hidden=true; return;
   }
   $("#list").innerHTML=r.slice(0,S.shown).map((o,n)=>row(o,n)).join("");
-  const wa=String(NEGOCIO.whatsapp||"").replace(/\D/g,"");
-  $("#offer").hidden=!wa; $("#toOffer").hidden=!wa;
-  if(wa){
-    const art=$("#art").value.trim().split("\n").find(x=>x.trim())||"";
-    const msg=`Hola, quiero un informe de INDEX Lab para mi artículo.\n\nTítulo: ${art.slice(0,200)}\n\nRevistas más afines en INDEX Lab Revistas:\n`+r.slice(0,5).map((o,k)=>`${k+1}. ${o.j.t}${o.j.fl&1&&o.j.q?" (Q"+o.j.q+")":""}`).join("\n");
-    $("#offerBtn").href=`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`;
-    $("#offerNum").textContent="+"+wa;
-  }
   $("#btnMore").hidden=S.shown>=r.length;
 }
 const FAMN=["Ciencias sociales y educación","Salud","Ingeniería y computación","Ciencias naturales y de la vida","Artes y humanidades","Economía y negocios","Multidisciplinaria"];
@@ -1049,7 +1082,7 @@ $("#list").innerHTML=Array.from({length:6},()=>`<li><div class="rhead" style="cu
   if(!window.claude||!claude.use) return;
   try{ downloads=await claude.use("downloads"); }catch(_){ downloads=null; }
 })();
-renderProfile();
+renderProfile(); renderPlans();
 })();
 </script>
 
