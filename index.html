@@ -212,9 +212,24 @@ li.open .rhead{background:var(--active)}
 .empty{padding:28px 20px;text-align:center;color:var(--muted);font-size:14px}
 .skel{display:block;height:14px;border-radius:3px;background:var(--raised)}
 .more{align-self:center}
-.offer{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-card);padding:var(--pad);display:flex;flex-direction:column;gap:16px}
-.offer h2{font-size:20px;line-height:26px;font-weight:700}
-.offer-head p{margin:6px 0 0;font-size:14px;line-height:20px;color:var(--muted);max-width:68ch}
+.offer{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-card)}
+.offer-head{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px 20px;padding:16px var(--pad);cursor:pointer;border-radius:var(--radius-card)}
+.offer-head::-webkit-details-marker{display:none}
+.offer-head:hover{background:#fafafa}
+.offer-head:focus-visible{outline:2px solid var(--hue);outline-offset:2px}
+.oh-txt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.offer h2{font-size:17px;line-height:24px;font-weight:700}
+.oh-sub{font-size:14px;line-height:20px;color:var(--muted)}
+.oh-btn{flex:none;display:inline-flex;align-items:center;gap:6px;height:var(--control-height);padding:0 14px;border-radius:var(--radius-control);background:var(--primary);color:var(--primary-ink);font-size:14px;font-weight:500}
+.oh-btn svg{width:16px;height:16px;transition:transform .15s}
+.offer[open] .oh-btn{background:var(--raised);color:var(--text)}
+.offer[open] .oh-btn svg{transform:rotate(180deg)}
+.offer .when-open{display:none}
+.offer[open] .when-open{display:inline}
+.offer[open] .when-closed{display:none}
+.offer-body{display:flex;flex-direction:column;gap:16px;padding:0 var(--pad) var(--pad)}
+.offer .intro{margin:0;font-size:14px;line-height:20px;color:var(--muted);max-width:68ch}
+@media (max-width:640px){.offer-head{flex-wrap:wrap}.oh-btn{width:100%;justify-content:center}}
 .plans{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--gap)}
 .plan{border:1px solid var(--border);border-radius:var(--radius-card);padding:16px;display:flex;flex-direction:column;gap:10px;background:var(--surface)}
 .plan.rec{border:2px solid var(--hue);padding:15px}
@@ -408,18 +423,22 @@ li.open .rhead{background:var(--active)}
         <ol class="list" id="list"></ol>
       </div>
       <button type="button" class="btn more" id="btnMore" hidden>Ver 25 más</button>
-      <section class="offer" id="offer" aria-labelledby="h-offer">
-        <div class="offer-head">
-          <h2 id="h-offer">Servicios y precios</h2>
-          <p>La lista te dice dónde podrías publicar. Nosotros verificamos cada revista y te decimos dónde conviene publicar y cómo hacerlo. Precios de lanzamiento en soles; pago por Yape, Plin o transferencia.</p>
-        </div>
+      <details class="offer" id="offer">
+        <summary class="offer-head">
+          <span class="oh-txt"><h2 id="h-offer">Servicios y precios</h2>
+          <span class="oh-sub">¿No sabes cuál elegir? Verificamos cada revista por ti. Informes desde S/ 29.</span></span>
+          <span class="oh-btn"><span class="when-closed">Ver precios</span><span class="when-open">Ocultar</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span>
+        </summary>
+        <div class="offer-body">
+        <p class="intro">La lista te dice dónde podrías publicar. Nosotros verificamos cada revista y te decimos dónde conviene publicar y cómo hacerlo. Precios de lanzamiento en soles; pago por Yape, Plin o transferencia.</p>
         <div class="plans" id="plans"></div>
         <div class="extras">
           <h3>Extras</h3>
           <ul id="extras"></ul>
         </div>
         <p class="fine">No garantizamos la aceptación: esa decisión es de cada revista. Trabajamos sobre la forma, la selección y el envío; no redactamos el contenido científico del artículo.</p>
-      </section>
+        </div>
+      </details>
       <div class="foot">
         <p><b>Revistas</b> es una herramienta de <b>INDEX Lab</b> para investigadores y autores.</p>
         <p><b>Fuentes.</b> Scopus: SCImago Journal Rank 2025, publicado en 2026, con cuartiles, categorías y cobertura. Acceso abierto: Directory of Open Access Journals (DOAJ), con idiomas, palabras clave y APC. Temas de investigación y sitios web oficiales: OpenAlex (datos abiertos CC0), compilados por el proyecto JournalScope.</p>
@@ -854,7 +873,8 @@ function renderPlans(){
   </article>`).join("");
   $("#extras").innerHTML=EXTRAS.map(([a,b])=>`<li><span>${esc(a)}</span><b>${esc(b)}</b></li>`).join("");
 }
-document.addEventListener("click",e=>{const a=e.target.closest("a[data-plan]"); if(a) a.href=waLink(a.dataset.plan);});   // built at click time with the current article and results
+document.addEventListener("click",e=>{const a=e.target.closest("a[data-plan]"); if(a) a.href=waLink(a.dataset.plan);});
+document.addEventListener("click",e=>{ if(e.target.closest("#toOffer")){ e.preventDefault(); const d=$("#offer"); d.open=true; d.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"}); } });   // built at click time with the current article and results
 function render(){
   const r=S.results, c=S.counts||{}, F=S.F||{};
   const sum=QK.reduce((a,[k])=>a+(c[k]||0),0);
