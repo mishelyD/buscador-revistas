@@ -1,6 +1,6 @@
-# INDEX Revistas
+# INDEX Lab Revistas
 
-Una herramienta de **INDEX**.
+Una herramienta de **INDEX Lab**.
 
 Herramienta web para encontrar revistas científicas afines a un artículo, con cuartil SCImago 2025,
 cobertura en Scopus hasta 2026, APC, idioma y región.
