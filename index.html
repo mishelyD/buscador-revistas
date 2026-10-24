@@ -7,6 +7,7 @@
 <meta property="og:title" content="INDEX Lab Revistas">
 <meta property="og:description" content="Revistas Scopus y DOAJ afines a tu artículo, con cuartil, cobertura 2026, costo e idioma.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22%3E%3Crect width=%2240%22 height=%2240%22 rx=%228%22 fill=%22%23141414%22/%3E%3Crect x=%229%22 y=%229%22 width=%225%22 height=%2222%22 rx=%221%22 fill=%22%23fff%22/%3E%3Crect x=%2216%22 y=%2213%22 width=%225%22 height=%2218%22 rx=%221%22 fill=%22%23bdbdbd%22/%3E%3Crect x=%2223%22 y=%2217%22 width=%225%22 height=%2214%22 rx=%221%22 fill=%22%238a8a8a%22/%3E%3Ccircle cx=%2231%22 cy=%2211%22 r=%223%22 fill=%22%231d5fbf%22/%3E%3C/svg%3E">
+<script data-goatcounter="https://indexlab.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 <title>INDEX Lab Revistas</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;700&family=Geist+Mono:wght@400;500&display=swap">
@@ -855,6 +856,7 @@ function applyFilters(){
 const QK=[["1","Q1","var(--q1)"],["2","Q2","var(--q2)"],["3","Q3","var(--q3)"],["4","Q4","var(--q4)"],["0","Sin cuartil","var(--q0)"],["d","Solo DOAJ","var(--hue-pale)"]];
 function qchip(j){ if(!(j.fl&1)) return `<span class="qc q0" title="No está en Scopus">DOAJ</span>`; return j.q?`<span class="qc q${j.q}">Q${j.q}</span>`:`<span class="qc q0">s/c</span>`; }
 const noArt=()=>!S.prof.cats.length&&!S.prof.subs.length&&!S.prof.kws.length&&!(S.prof.topics||[]).length;
+const track=(name,title)=>{try{window.goatcounter&&window.goatcounter.count&&window.goatcounter.count({path:name,title:title||name,event:true});}catch(_){}};
 function waLink(plan){
   const n=NEGOCIO.wa.slice().reverse().join("");
   const art=splitArticle($("#art").value.trim()).title;
@@ -873,8 +875,8 @@ function renderPlans(){
   </article>`).join("");
   $("#extras").innerHTML=EXTRAS.map(([a,b])=>`<li><span>${esc(a)}</span><b>${esc(b)}</b></li>`).join("");
 }
-document.addEventListener("click",e=>{const a=e.target.closest("a[data-plan]"); if(a) a.href=waLink(a.dataset.plan);});
-document.addEventListener("click",e=>{ if(e.target.closest("#toOffer")){ e.preventDefault(); const d=$("#offer"); d.open=true; d.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"}); } });   // built at click time with the current article and results
+document.addEventListener("click",e=>{const a=e.target.closest("a[data-plan]"); if(a){ a.href=waLink(a.dataset.plan); track("pedido-whatsapp-"+norm(a.dataset.plan).replace(/ /g,"-"),"Pedido por WhatsApp: "+a.dataset.plan);} });
+document.addEventListener("click",e=>{ if(e.target.closest("#toOffer")){ e.preventDefault(); const d=$("#offer"); d.open=true; track("ver-precios","Ver precios"); d.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"}); } });   // built at click time with the current article and results
 function render(){
   const r=S.results, c=S.counts||{}, F=S.F||{};
   const sum=QK.reduce((a,[k])=>a+(c[k]||0),0);
@@ -1050,7 +1052,7 @@ $("#btnAnalyze").addEventListener("click",()=>{
   if(txt.length<40){setStatus("#artStatus","Pega al menos el título, el resumen y las palabras clave del artículo.",true);return;}
   if(!S.data||!TI.ready){setStatus("#artStatus","El catálogo aún se está cargando. Espera unos segundos.",true);return;}
   markEdited();
-  const A=applyAnalysis(txt);
+  const A=applyAnalysis(txt); track("busqueda","Búsqueda de revistas");
   const L={es:"español",pt:"portugués",en:"inglés"}[A.lang];
   if(!A.topics.length){setStatus("#artStatus","No pude identificar temas en el texto. Pega el título y el resumen completos, con sus palabras clave.",true);return;}
   const parts=[`Artículo en ${L}.`, A.kwsFound?`Usé sus ${A.kwsFound} palabras clave.`:"No trae línea de palabras clave; usé el título y el resumen.",
