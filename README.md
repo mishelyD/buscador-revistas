@@ -1,4 +1,6 @@
-# Buscador de Revistas
+# INDEX Revistas
+
+Una herramienta de **INDEX**.
 
 Herramienta web para encontrar revistas científicas afines a un artículo, con cuartil SCImago 2025,
 cobertura en Scopus hasta 2026, APC, idioma y región.

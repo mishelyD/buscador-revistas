@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="Encuentra revistas científicas para tu artículo: cuartil SCImago 2025, cobertura en Scopus hasta 2026, APC, idioma y región. Gratis.">
-<meta property="og:title" content="Buscador de Revistas">
+<meta name="description" content="INDEX Revistas: encuentra revistas científicas para tu artículo: cuartil SCImago 2025, cobertura en Scopus hasta 2026, APC, idioma y región. Gratis.">
+<meta property="og:title" content="INDEX Revistas">
 <meta property="og:description" content="Revistas Scopus y DOAJ afines a tu artículo, con cuartil, cobertura 2026, costo e idioma.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22%3E%3Crect width=%2240%22 height=%2240%22 rx=%228%22 fill=%22%23141414%22/%3E%3Crect x=%2210%22 y=%229%22 width=%224%22 height=%2222%22 rx=%221%22 fill=%22%23fff%22/%3E%3Crect x=%2216%22 y=%2213%22 width=%224%22 height=%2218%22 rx=%221%22 fill=%22%23bdbdbd%22/%3E%3Crect x=%2222%22 y=%2217%22 width=%224%22 height=%2214%22 rx=%221%22 fill=%22%238a8a8a%22/%3E%3C/svg%3E">
-<title>Buscador de Revistas</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22%3E%3Crect width=%2240%22 height=%2240%22 rx=%228%22 fill=%22%23141414%22/%3E%3Crect x=%229%22 y=%229%22 width=%225%22 height=%2222%22 rx=%221%22 fill=%22%23fff%22/%3E%3Crect x=%2216%22 y=%2213%22 width=%225%22 height=%2218%22 rx=%221%22 fill=%22%23bdbdbd%22/%3E%3Crect x=%2223%22 y=%2217%22 width=%225%22 height=%2214%22 rx=%221%22 fill=%22%238a8a8a%22/%3E%3Ccircle cx=%2231%22 cy=%2211%22 r=%223%22 fill=%22%231d5fbf%22/%3E%3C/svg%3E">
+<title>INDEX Revistas</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;700&family=Geist+Mono:wght@400;500&display=swap">
 <style>
@@ -44,7 +44,9 @@ button,input,select,textarea{font:inherit;color:inherit}
 .titlerow{padding-block:28px 20px;display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between}
 .brand{display:flex;gap:12px;align-items:center;min-width:0;flex:1 1 560px}
 .mark{flex:none;width:40px;height:40px;display:block}
-h1{font-size:22px;font-weight:700;letter-spacing:.04em;line-height:28px;margin:0;text-transform:uppercase}
+h1{font-size:24px;line-height:28px;margin:0;font-weight:700}
+.wm-brand{font-weight:700;letter-spacing:.14em}
+.wm-tool{font-weight:400;color:var(--hue)}
 .finding{margin:2px 0 0;font-size:15px;line-height:22px;color:var(--text)}
 .muted,.finding .muted{color:var(--muted)}
 .fresh{font-size:13px;line-height:18px;color:var(--muted);text-align:right;flex:none}
@@ -261,9 +263,9 @@ li.open .rhead{background:var(--active)}
 <div class="col">
   <header class="titlerow">
     <div class="brand">
-      <svg class="mark" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="8" fill="#141414"/><rect x="10" y="9" width="4" height="22" rx="1" fill="#fff"/><rect x="16" y="13" width="4" height="18" rx="1" fill="#bdbdbd"/><rect x="22" y="17" width="4" height="14" rx="1" fill="#8a8a8a"/><circle cx="29.5" cy="13.5" r="3.6" fill="none" stroke="#fff" stroke-width="2"/><path d="m32 16 2.5 2.5" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+      <svg class="mark" viewBox="0 0 40 40" role="img" aria-label="INDEX"><rect width="40" height="40" rx="8" fill="#141414"/><rect x="9" y="9" width="5" height="22" rx="1" fill="#fff"/><rect x="16" y="13" width="5" height="18" rx="1" fill="#bdbdbd"/><rect x="23" y="17" width="5" height="14" rx="1" fill="#8a8a8a"/><circle cx="31" cy="11" r="3" fill="#1d5fbf"/></svg>
       <div>
-        <h1>Buscador de Revistas</h1>
+        <h1 class="wordmark"><span class="wm-brand">INDEX</span> <span class="wm-tool">Revistas</span></h1>
         <p class="finding" id="finding">Cargando el catálogo de revistas…</p>
       </div>
     </div>
@@ -406,6 +408,7 @@ li.open .rhead{background:var(--active)}
         </div>
       </section>
       <div class="foot">
+        <p><b>INDEX Revistas</b> es una herramienta de INDEX para investigadores y autores.</p>
         <p><b>Fuentes.</b> Scopus: SCImago Journal Rank 2025, publicado en 2026, con cuartiles, categorías y cobertura. Acceso abierto: Directory of Open Access Journals (DOAJ), con idiomas, palabras clave y APC. Temas de investigación y sitios web oficiales: OpenAlex (datos abiertos CC0), compilados por el proyecto JournalScope.</p>
         <p><b>Antes de enviar.</b> Confirma en la web de cada revista su alcance, el costo vigente y las normas para autores. Desconfía de revistas que no estén en estas bases y prometan publicación rápida.</p>
       </div>
@@ -432,7 +435,7 @@ const cty=c=>ES_CTY[c]||c;
 /* ---------- CONFIGURACIÓN DEL NEGOCIO ----------
    Escribe tu número de WhatsApp con código de país, solo dígitos (Perú: 51 + 9 dígitos).
    Mientras esté vacío, el recuadro "Pide tu informe" no se muestra. */
-const NEGOCIO={whatsapp:"51993097406", marca:"Buscador de Revistas"};
+const NEGOCIO={whatsapp:"51993097406", marca:"INDEX Revistas"};
 
 /* ---------- example (pre-filled, marked "Ejemplo") ---------- */
 
@@ -833,7 +836,7 @@ function render(){
   $("#offer").hidden=!wa; $("#toOffer").hidden=!wa;
   if(wa){
     const art=$("#art").value.trim().split("\n").find(x=>x.trim())||"";
-    const msg=`Hola, quiero un informe de revistas para mi artículo.\n\nTítulo: ${art.slice(0,200)}\n\nRevistas más afines en el Buscador:\n`+r.slice(0,5).map((o,k)=>`${k+1}. ${o.j.t}${o.j.fl&1&&o.j.q?" (Q"+o.j.q+")":""}`).join("\n");
+    const msg=`Hola, quiero un informe de INDEX Revistas para mi artículo.\n\nTítulo: ${art.slice(0,200)}\n\nRevistas más afines en INDEX Revistas:\n`+r.slice(0,5).map((o,k)=>`${k+1}. ${o.j.t}${o.j.fl&1&&o.j.q?" (Q"+o.j.q+")":""}`).join("\n");
     $("#offerBtn").href=`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`;
     $("#offerNum").textContent="+"+wa;
   }
