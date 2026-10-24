@@ -502,7 +502,7 @@ function renderProfile(){
 }
 const shortSub=s=>{const p=s.split(": ");return p.length>2?p[0]+": … "+p[p.length-1]:s;};
 document.addEventListener("click",e=>{
-  const w=e.target.closest(".w"); if(w){const it=S.prof[w.dataset.k][+w.dataset.i]; it.w=it.w>=3?1:it.w+1; markEdited(); renderProfile(); run(); return;}
+  const w=e.target.closest(".w"); if(w){const it=S.prof[w.dataset.k][+w.dataset.i]; it.w=it.w>=3?1:it.w+1; delete it.s; markEdited(); renderProfile(); run(); return;}
   const d=e.target.closest("[data-del]"); if(d){S.prof[d.dataset.del].splice(+d.dataset.i,1); markEdited(); renderProfile(); run(); return;}
   if(!e.target.closest(".adder")) $("#topicSugg").hidden=true;
 });
@@ -545,7 +545,9 @@ function score(){
   const P=S.prof, J=S.J, N=J.length;
   const catW=new Map(P.cats.map(c=>[c.id,c.w])), catSum=P.cats.reduce((a,c)=>a+c.w,0);
   const subSum=P.subs.reduce((a,c)=>a+c.w,0);
-  const TW={3:9,2:3,1:1}, tops=P.topics||[], tpW=new Map(tops.map(t=>[t.id,TW[t.w]||1])), tpSum=tops.reduce((a,t)=>a+(TW[t.w]||1),0);
+  const REL={3:1,2:.75,1:.55}, rel=t=>t.s??REL[t.w]??.55, tw=t=>9*rel(t)**3;
+  const tops=P.topics||[], tpW=new Map(tops.map(t=>[t.id,tw(t)])), tpSum=tops.reduce((a,t)=>a+tw(t),0);
+  const mainT=new Set([...tops].sort((a,b)=>rel(b)-rel(a)).slice(0,2).map(t=>t.id));
   // keywords: token stems, idf by document frequency of a full match
   const K=P.kws.map(k=>({k,t:[...new Set(toks(k))]})).filter(x=>x.t.length);
   const df=K.map(()=>0);
@@ -562,7 +564,7 @@ function score(){
     if(subSum && j.subs.length){
       for(const a of P.subs){ let best=0;
         for(const b of j.subs){ let v=0;
-          if(a.id===b) v=1; else if(S.subAnc[b].includes(a.id)||S.subAnc[a.id].includes(b)) v=.6; else if(S.subTop[a.id]===S.subTop[b]) v=.15;
+          if(a.id===b) v=1; else if(S.subAnc[b].includes(a.id)) v=.6; else if(S.subAnc[a.id].includes(b)) v=.25; else if(S.subTop[a.id]===S.subTop[b]) v=.1;   // a broader subject says less
           if(v>best) best=v; }
         if(best>=.6) ms.push(a.id);
         ss+=a.w*best; }
@@ -575,7 +577,7 @@ function score(){
         else if(f>=.5) ks+=x.idf*.3*f; }
       ks/=kwSum; if(ks>maxKw) maxKw=ks; }
     let tf=0, mt=[];
-    if(tpSum && j.tp.length){ for(const [t,sh] of j.tp){const w=tpW.get(t); if(w){tf+=w*Math.min(sh,25); mt.push(t);} } tf=tf/tpSum/25; }  // a share above 25% adds no more: breadth on the main topic wins over a niche
+    if(tpSum && j.tp.length){ let main=false; for(const [t,sh] of j.tp){const w=tpW.get(t); if(w){tf+=w*Math.min(sh,25); mt.push(t); if(mainT.has(t)) main=true;} } tf=tf/tpSum/25*(main?1:0.5); }  // journals outside the two main topics count half  // a share above 25% adds no more: breadth on the main topic wins over a niche
     const topical=Math.max(cs, ss*.9);
     if(topical<=0 && ks<=0 && tf<=0) continue;
     out.push({j,cs,ss,ks,tf,topical,mc,ms,mk,mt});
@@ -606,7 +608,7 @@ gobierno:government|estado:state|publico:public|publica:public|politica:policy|p
 agua:water|suelo:soil|suelos:soils|tierra:land|bosque:forest|bosques:forests|arbol:tree|arboles:trees|planta:plant|plantas:plants|hoja:leaf|hojas:leaves|semilla:seed|semillas:seeds|cultivo:crop|cultivos:crops|cosecha:harvest|riego:irrigation|agricola:agricultural|agricultura:agriculture|ganado:livestock|ganaderia:livestock|vaca:cow|vacas:cows|bovino:cattle|bovinos:cattle|cerdo:pig|cerdos:pigs|aves:birds|pollo:chicken|pollos:chickens|pez:fish|peces:fish|pesca:fishing|mar:sea|marino:marine|costa:coast|rio:river|rios:rivers|lago:lake|cuenca:basin|lluvia:rainfall|clima:climate|cambio climatico:climate change|temperatura:temperature|calor:heat|sequia:drought|inundacion:flood|terremoto:earthquake|sismo:earthquake|volcan:volcano|montana:mountain|glaciar:glacier|aire:air|contaminacion:pollution|residuos:waste|basura:waste|reciclaje:recycling|biodiversidad:biodiversity|especie:species|especies:species|ecosistema:ecosystem|insecto:insect|insectos:insects|plaga:pest|plagas:pests|enfermedades de plantas:plant disease|trigo:wheat|maiz:maize|arroz:rice|papa:potato|papas:potatoes|cafe:coffee|cacao:cocoa|fruta:fruit|frutas:fruits|
 energia:energy|electrica:electric|electricidad:electricity|solar:solar|eolica:wind|viento:wind|combustible:fuel|petroleo:oil|gas:gas|motor:engine|vehiculo:vehicle|vehiculos:vehicles|transporte:transport|carretera:road|puente:bridge|edificio:building|edificios:buildings|construccion:construction|concreto:concrete|hormigon:concrete|acero:steel|madera:wood|material:material|materiales:materials|resistencia:strength|diseno:design|fabricacion:manufacturing|maquina:machine|maquinas:machines|herramienta:tool|herramientas:tools|sensor:sensor|sensores:sensors|red:network|redes:networks|datos:data|base de datos:database|programa:software|software:software|aplicacion:application|aplicaciones:applications|computadora:computer|ordenador:computer|computacional:computational|algoritmo:algorithm|algoritmos:algorithms|aprendizaje automatico:machine learning|aprendizaje profundo:deep learning|inteligencia artificial:artificial intelligence|red neuronal:neural network|redes neuronales:neural networks|vision por computadora:computer vision|imagen:image|imagenes:images|dron:drone|drones:drones|nube:cloud|seguridad informatica:cybersecurity|ciberseguridad:cybersecurity|sistema de informacion:information system|sistemas de informacion:information systems|trazabilidad:traceability|expediente:record|expedientes:records|documento:document|documentos:documents|documental:document|archivo:archive|archivos:archives|biblioteca:library|bibliotecas:libraries|digital:digital|digitalizacion:digitalization|plataforma:platform|web:web|
 quimica:chemistry|quimico:chemical|fisica:physics|biologia:biology|matematica:mathematics|estadistica:statistics|muestra:sample|muestras:samples|encuesta:survey|entrevista:interview|entrevistas:interviews|cuestionario:questionnaire|metodo:method|metodos:methods|metodologia:methodology|modelo:model|modelos:models|analisis:analysis|estudio:study|estudios:studies|investigacion:research|resultado:result|resultados:results|hallazgos:findings|objetivo:objective|revision:review|revision sistematica:systematic review|metaanalisis:meta analysis|transversal:cross sectional|cohorte:cohort|ensayo:trial|ensayo clinico:clinical trial|regresion:regression|prevalencia:prevalence|incidencia:incidence|propuesta:proposal|mejora:improvement|proceso:process|procesos:processes|calidad:quality|indicador:indicator|indicadores:indicators|percepcion:perception|satisfaccion:satisfaction|tiempo:time|nivel:level|
-confort:comfort|confort termico:thermal comfort|termico:thermal|termica:thermal|aislamiento:insulation|aislamiento termico:thermal insulation|ganancia solar:solar gain|pasiva:passive|pasivo:passive|bioclimatica:bioclimatic|arquitectura bioclimatica:bioclimatic architecture|eficiencia energetica:energy efficiency|invierno:winter|verano:summer|interior:indoor|vivienda rural:rural housing|viviendas:dwellings|quinua:quinoa|capacidad antioxidante:antioxidant capacity|antioxidantes:antioxidants|compuestos fenolicos:phenolic compounds|polifenoles:polyphenols|flavonoides:flavonoids|alimentos funcionales:functional foods|grano:grain|granos:grains|contacto de lenguas:language contact|contacto linguistico:language contact|castellano:spanish|espanol:spanish|bilinguismo:bilingualism|hablantes:speakers|habla:speech|camelidos:camelids|camelidos sudamericanos:south american camelids|parasitos:parasites|parasitosis:parasitic infection|nematodos:nematodes|crias:young animals|muestras fecales:fecal samples|educacion superior:higher education|ensino superior:higher education|gestion documental:document management|gestao documental:document management|transformacion digital:digital transformation|transformacao digital:digital transformation|rendimiento academico:academic performance|desempeno academico:academic performance|salud publica:public health|saude publica:public health|salud mental:mental health|saude mental:mental health|derechos humanos:human rights|direitos humanos:human rights|cambio climatico:climate change|medio ambiente:environment|educacion basica:basic education|educacion secundaria:secondary education|formacion docente:teacher training|politica publica:public policy|politicas publicas:public policies|violencia de genero:gender violence|medidas de proteccion:protection measures|derecho de familia:family law|acceso a la justicia:access to justice|america latina:latin america|desarrollo local:local development|secundaria:secondary|secundario:secondary|primaria:primary|primario:primary|inicial:early|basica:basic|acceso:access|medidas:measures|medida:measure|teledeteccion:remote sensing|percepcion remota:remote sensing|sensoriamento remoto:remote sensing|sensoriamento:sensing|desmatamento:deforestation|deforestacion:deforestation|mypes:small enterprises|mype:small enterprise|pymes:small and medium enterprises|pyme:small and medium enterprise|micro y pequenas empresas:small enterprises|pequenas empresas:small enterprises|informalidad:informality|informal:informal|productividad total de los factores:total factor productivity|turismo:tourism|turista:tourist|turistas:tourists|turistico:tourism|comunitario:community|comunitaria:community|campesino:peasant|campesinas:peasant|campesinos:peasants|patrimonio:heritage|visitantes:visitors|gamificacion:gamification|motivacion:motivation|cuasiexperimental:quasi experimental|calificaciones:grades|sistema:system|sistemas:systems|tecnologia:technology|tecnologias:technologies|victima:victim|victimas:victims|juzgado:court|juzgados:courts|judicial:judicial|policial:police|seguimiento:monitoring|cumplimiento:compliance|ejecucion:enforcement|hemoglobina:hemoglobin|suplementacion:supplementation|ferropenica:iron deficiency|ferropenia:iron deficiency|menores de cinco anos:under five|chuvas:rainfall|precipitacao:precipitation|satelite:satellite|series historicas:time series|areas desmatadas:deforested areas|criancas:children|saude:health|doenca:disease|doencas:diseases|ensino:teaching|aprendizagem:learning|aluno:student|alunos:students|professor:teacher|professores:teachers|escola:school|escolas:schools|trabalho:work|trabalhadores:workers|empresa:company|gestao:management|pesquisa:research|estudo:study|politicas publicas:public policy|mulheres:women|agua:water|solo:soil|floresta:forest|plantas:plants|cultura:culture|desenvolvimento:development|sociedade:society|dados:data|rede:network|ferramenta:tool|cuidado:care|enfermagem:nursing|atencao:care|idosos:elderly|gravidez:pregnancy|amamentacao:breastfeeding|alimentacao:nutrition|qualidade:quality|cidade:city|habitacao:housing|direito:law|leis:laws|governo:government|economia:economy|mercado:market|precos:prices|custo:cost|renda:income|pobreza:poverty|ambiente:environment|meio ambiente:environment|mudancas climaticas:climate change|chuva:rainfall|seca:drought|rio:river|mar:sea|peixes:fish|gado:livestock|milho:maize|arroz:rice|trigo:wheat|cafe:coffee|energia:energy|transporte:transport|construcao:construction|madeira:wood|aco:steel|computador:computer|aprendizado de maquina:machine learning|inteligencia artificial:artificial intelligence|`;
+confort:comfort|confort termico:thermal comfort|termico:thermal|termica:thermal|aislamiento:insulation|aislamiento termico:thermal insulation|ganancia solar:solar gain|pasiva:passive|pasivo:passive|bioclimatica:bioclimatic|arquitectura bioclimatica:bioclimatic architecture|eficiencia energetica:energy efficiency|invierno:winter|verano:summer|interior:indoor|vivienda rural:rural housing|viviendas:dwellings|quinua:quinoa|capacidad antioxidante:antioxidant capacity|antioxidantes:antioxidants|compuestos fenolicos:phenolic compounds|polifenoles:polyphenols|flavonoides:flavonoids|alimentos funcionales:functional foods|grano:grain|granos:grains|contacto de lenguas:language contact|contacto linguistico:language contact|castellano:spanish|espanol:spanish|bilinguismo:bilingualism|hablantes:speakers|habla:speech|camelidos:camelids|camelidos sudamericanos:south american camelids|parasitos:parasites|parasitosis:parasitic infection|nematodos:nematodes|crias:young animals|muestras fecales:fecal samples|lima:lima|cusco:cusco|puno:puno|arequipa:arequipa|trujillo:trujillo|piura:piura|mejoras:improvements|costa rica:costa rica|el salvador:el salvador|republica dominicana:dominican republic|pais:country|paises:countries|pib:gdp|efecto:effect|efectos:effects|largo plazo:long run|corto plazo:short run|dinamico:dynamic|dinamica:dynamic|inercia:inertia|demanda:demand|demandas:applications|no residentes:non residents|residentes:residents|propiedad intelectual:intellectual property|propriedade intelectual:intellectual property|patente:patent|patentes:patents|patentamiento:patenting|i d:research and development|p d:research and development|investigacion y desarrollo:research and development|pesquisa e desenvolvimento:research and development|endogeno:endogenous|endogena:endogenous|crecimiento economico:economic growth|crescimento economico:economic growth|crecimiento endogeno:endogenous growth|transferencia tecnologica:technology transfer|transferencia de tecnologia:technology transfer|capital humano:human capital|gasto:expenditure|triple helice:triple helix|universidad empresa estado:university industry government|ciencia y tecnologia:science and technology|sistema nacional de innovacion:national innovation system|datos de panel:panel data|educacion superior:higher education|ensino superior:higher education|gestion documental:document management|gestao documental:document management|transformacion digital:digital transformation|transformacao digital:digital transformation|rendimiento academico:academic performance|desempeno academico:academic performance|salud publica:public health|saude publica:public health|salud mental:mental health|saude mental:mental health|derechos humanos:human rights|direitos humanos:human rights|cambio climatico:climate change|medio ambiente:environment|educacion basica:basic education|educacion secundaria:secondary education|formacion docente:teacher training|politica publica:public policy|politicas publicas:public policies|violencia de genero:gender violence|medidas de proteccion:protection measures|derecho de familia:family law|acceso a la justicia:access to justice|america latina:latin america|desarrollo local:local development|secundaria:secondary|secundario:secondary|primaria:primary|primario:primary|inicial:early|basica:basic|acceso:access|medidas:measures|medida:measure|teledeteccion:remote sensing|percepcion remota:remote sensing|sensoriamento remoto:remote sensing|sensoriamento:sensing|desmatamento:deforestation|deforestacion:deforestation|mypes:small enterprises|mype:small enterprise|pymes:small and medium enterprises|pyme:small and medium enterprise|micro y pequenas empresas:small enterprises|pequenas empresas:small enterprises|informalidad:informality|informal:informal|productividad total de los factores:total factor productivity|turismo:tourism|turista:tourist|turistas:tourists|turistico:tourism|comunitario:community|comunitaria:community|campesino:peasant|campesinas:peasant|campesinos:peasants|patrimonio:heritage|visitantes:visitors|gamificacion:gamification|motivacion:motivation|cuasiexperimental:quasi experimental|calificaciones:grades|sistema:system|sistemas:systems|tecnologia:technology|tecnologias:technologies|victima:victim|victimas:victims|juzgado:court|juzgados:courts|judicial:judicial|policial:police|seguimiento:monitoring|cumplimiento:compliance|ejecucion:enforcement|hemoglobina:hemoglobin|suplementacion:supplementation|ferropenica:iron deficiency|ferropenia:iron deficiency|menores de cinco anos:under five|chuvas:rainfall|precipitacao:precipitation|satelite:satellite|series historicas:time series|areas desmatadas:deforested areas|criancas:children|saude:health|doenca:disease|doencas:diseases|ensino:teaching|aprendizagem:learning|aluno:student|alunos:students|professor:teacher|professores:teachers|escola:school|escolas:schools|trabalho:work|trabalhadores:workers|empresa:company|gestao:management|pesquisa:research|estudo:study|politicas publicas:public policy|mulheres:women|agua:water|solo:soil|floresta:forest|plantas:plants|cultura:culture|desenvolvimento:development|sociedade:society|dados:data|rede:network|ferramenta:tool|cuidado:care|enfermagem:nursing|atencao:care|idosos:elderly|gravidez:pregnancy|amamentacao:breastfeeding|alimentacao:nutrition|qualidade:quality|cidade:city|habitacao:housing|direito:law|leis:laws|governo:government|economia:economy|mercado:market|precos:prices|custo:cost|renda:income|pobreza:poverty|ambiente:environment|meio ambiente:environment|mudancas climaticas:climate change|chuva:rainfall|seca:drought|rio:river|mar:sea|peixes:fish|gado:livestock|milho:maize|arroz:rice|trigo:wheat|cafe:coffee|energia:energy|transporte:transport|construcao:construction|madeira:wood|aco:steel|computador:computer|aprendizado de maquina:machine learning|inteligencia artificial:artificial intelligence|`;
 const LEX = new Map();
 for (const pair of LEX_RAW.split("|")) {
   const k = pair.indexOf(":"); if (k < 1) continue;
@@ -636,7 +638,8 @@ function enStem(t){
 }
 const enToks=s=>norm(s).split(" ").filter(t=>t&&t.length>1&&!EN_STOP.has(t));
 const TI={ready:false};
-const GEO=new Set("peru peruvian lima cusco puno andean andes latin america american brazil brazilian amazon amazonia mexico mexican colombia colombian chile chilean argentina argentine ecuador bolivia venezuela cuba spain spanish portugal africa african asia asian europe european china chinese india indian country countrie region regional".split(" "));
+const GEO=new Set("lima cusco puno arequipa trujillo piura ayacucho guatemala panama uruguay paraguay honduras nicaragua salvador dominican costa rica caribbean peru peruvian lima cusco puno andean andes latin america american brazil brazilian amazon amazonia mexico mexican colombia colombian chile chilean argentina argentine ecuador bolivia venezuela cuba spain spanish portugal africa african asia asian europe european china chinese india indian country countrie region regional".split(" "));
+const METHOD=new Set("panel data dataset econometric econometrics regression model estimation estimator estimate gmm coefficient variable sample statistical statistic fixed dynamic static observation method methodology empirical test hypothesis significant significance robust robustness specification lag lagged series descriptive quantitative qualitative instrument".split(" ").map(enStem));
 const ADJ_RE=/(ic|al|ary|ive|ous|ed|ent|ant|ar|ian|ile|ory|ible|able)$/;
 const ADJ=new Set("public secondary primary social academic climate early basic remote small total informal clinical mental physical digital urban rural local global human".split(" "));
 const isAdj=w=>ADJ.has(w)||ADJ_RE.test(w);
@@ -647,7 +650,7 @@ function buildTopicIndex(T){
     add(t[0],3); add(t[2].replace(/\|/g," "),2); add(t[3],1);
     for(const p of t[2].split("|")){const n=enToks(p).map(enStem).join(" "); if(n.includes(" ")){ if(!phrases.has(n)) phrases.set(n,[]); phrases.get(n).push(ti);} }
     const nm=enToks(t[0]).map(enStem).join(" "); if(nm.includes(" ")){ if(!phrases.has(nm)) phrases.set(nm,[]); phrases.get(nm).push(ti); }
-    tfs.push(tf); names.push([...new Set(enToks(t[0]).map(enStem))]);
+    tfs.push(tf); names.push(t[0].split(/,| and | & |:/i).map(g=>[...new Set(enToks(g).map(enStem))]).filter(g=>g.length));
     for(const [k,v] of tf){ if(!post.has(k)) post.set(k,[]); post.get(k).push([ti,v]); }
   });
   const N=T.length, idf=new Map();
@@ -661,9 +664,9 @@ const COG=[["ciones",["tions"]],["cion",["tion"]],["coes",["tions"]],["cao",["ti
  ["encias",["ences"]],["encia",["ence","ency"]],["ancias",["ances"]],["ancia",["ance","ancy"]],["mente",["ly"]],
  ["ismos",["isms"]],["ismo",["ism"]],["istas",["ists"]],["ista",["ist"]],["ivos",["ive"]],["ivas",["ive"]],["ivo",["ive"]],["iva",["ive"]],
  ["osos",["ous"]],["osas",["ous"]],["oso",["ous"]],["osa",["ous"]],["icos",["ic","ical"]],["icas",["ic","ics","ical"]],["ico",["ic","ical","al"]],["ica",["ic","ical","ics","al"]],
- ["ias",["ies"]],["ia",["y","ia"]],["ales",["al"]],["entes",["ent"]],["ente",["ent"]],["antes",["ant"]],["ante",["ant"]],
+ ["cias",["cies","ces"]],["cia",["cy","ce","tia"]],["ias",["ies"]],["ia",["y","ia"]],["ales",["al"]],["entes",["ent"]],["ente",["ent"]],["antes",["ant"]],["ante",["ant"]],
  ["ores",["or","ors"]],["os",["s",""]],["as",["s",""]],["es",["s",""]],["o",["","e"]],["a",["","e"]],["e",["","e"]]];
-const PRE=[["tecno","techno"],["term","therm"],["teor","theor"],["tema","thema"],["orto","ortho"],["anest","anesth"],["cato","catho"],["fisi","physi"],["filos","philos"],["farmac","pharmac"],["fotograf","photograph"],["fenomen","phenomen"],["psico","psycho"],["sist","syst"],["tip","typ"],["estr","str"],["esp","sp"],["est","st"],["esc","sc"]];
+const PRE=[["tecno","techno"],["term","therm"],["teor","theor"],["tema","thema"],["orto","ortho"],["anest","anesth"],["cato","catho"],["fisi","physi"],["din","dyn"],["hidr","hydr"],["sint","synt"],["filos","philos"],["farmac","pharmac"],["fotograf","photograph"],["fenomen","phenomen"],["psico","psycho"],["sist","syst"],["tip","typ"],["estr","str"],["esp","sp"],["est","st"],["esc","sc"]];
 const COG_CACHE=new Map();
 function cognate(w){
   if(COG_CACHE.has(w)) return COG_CACHE.get(w);
@@ -694,11 +697,13 @@ function toEnglish(text,lang){
       const x=w[i];
       if((lang==="es"?ES_STOP:PT_STOP).has(x)) continue;
       if(LEX.has(x)){ out.push(...LEX.get(x).split(" ")); continue; }
+      const sg=x.endsWith("es")&&LEX.has(x.slice(0,-2))?x.slice(0,-2):x.endsWith("s")&&LEX.has(x.slice(0,-1))?x.slice(0,-1):"";   // plural of a dictionary word
+      if(sg){ out.push(...LEX.get(sg).split(" ")); continue; }
       const c=cognate(x); if(c){ out.push(c); continue; }
-      if(x.length>3) out.push(x);
-    } else out.push(w[i]);
+      if(x.length>2) out.push(x);
+    } else if(!/^\d+$/.test(w[i])) out.push(w[i]);
   }
-  return out.filter(t=>!EN_STOP.has(t)&&t.length>1);
+  return out.filter(t=>!EN_STOP.has(t)&&t.length>1&&!/^\d+$/.test(t));
 }
 function splitArticle(txt){
   const kws=[]; let rest=txt;
@@ -706,6 +711,7 @@ function splitArticle(txt){
   let m; while((m=re.exec(txt))){ for(const p of m[1].split(/[;,·•|]/)){ const k=p.replace(/[.\s]+$/,"").trim(); if(k.length>1&&k.length<70&&!kws.some(x=>norm(x)===norm(k))) kws.push(k);} rest=rest.replace(m[0]," "); }
   const lines=rest.split("\n").map(x=>x.trim()).filter(Boolean);
   let title=""; if(lines.length&&lines[0].length<=300&&!/^(resumen|abstract|resumo)\b/i.test(lines[0])) title=lines.shift();
+  while(title&&/[:–—-]$/.test(title)&&lines.length&&lines[0].length<200&&!/^(resumen|abstract|resumo)\b/i.test(lines[0])) title+=" "+lines.shift();   // a title split over two lines
   const body=lines.join(" ").replace(/^(resumen|abstract|resumo)\s*[:.]?\s*/i,"");
   return {title,kws,body};
 }
@@ -714,8 +720,8 @@ function analyzeArticle(txt){
   const lang=detectLang(title+" "+body+" "+kws.join(" "));
   const vec=new Map(), seqs=[];
   const feed=(s,w)=>{const t=toEnglish(s,lang); seqs.push(t); for(const x of t){const k=enStem(x); vec.set(k,(vec.get(k)||0)+w);} return t;};
-  feed(title,3); const kwEn=kws.map(k=>feed(k,3).join(" ")); feed(body,1);
-  for(const [k,v] of vec) vec.set(k,(1+Math.log(v))*(GEO.has(k)?0.35:1));
+  feed(title,3); const kwEn=kws.map(k=>feed(k,3).join(" ")); feed(body.slice(0,3500),1); if(body.length>3500) feed(body.slice(3500,20000),0.3);
+  for(const [k,v] of vec) vec.set(k,(1+Math.log(v))*(GEO.has(k)?0.35:1)*(METHOD.has(k)?0.4:1));  // places and methods are context, not the topic
   // topic scores
   const T=TI.T, sc=new Float64Array(T.length), why=new Map();
   const hits=new Uint8Array(T.length);
@@ -726,9 +732,9 @@ function analyzeArticle(txt){
   for(let i=0;i<sc.length;i++){
     if(!sc[i]) continue;
     sc[i]=sc[i]/(TI.norms[i]*anorm)*Math.sqrt(Math.min(hits[i],4)/4);   // a topic must match several distinct words
-    const nm=TI.names[i]; let c=0; for(const x of nm) if(vec.has(x)) c++;
-    sc[i]*=0.4+0.6*(nm.length?c/nm.length:0);
-    if(nm.length&&c/nm.length<0.5){ let best="",bi=0; for(const x of nm){const v=TI.idf.get(x)||0; if(v>bi){bi=v;best=x;}} if(best&&!vec.has(best)) sc[i]*=0.6; }  // its most specific word is missing
+    const nm=TI.names[i]; let cov=0, any=false;                       // how much of the topic's own name is in the article
+    for(const g of nm){ let h=0; for(const x of g) if(vec.has(x)) h++; cov+=h/g.length; if(h) any=true; }
+    sc[i]*=nm.length?(any?0.5+0.5*cov/nm.length:0.35):1;
                         // and its own name should appear in the article
   }
   for(const seq of seqs){ const st=seq.map(enStem);
@@ -738,11 +744,11 @@ function analyzeArticle(txt){
   const order=[...sc.keys()].sort((a,b)=>sc[b]-sc[a]).slice(0,40);
   const top=sc[order[0]]||0;
   // keep topics that agree with the main ones: same research field, unless the match is very strong
-  const lead=new Set(order.filter(i=>sc[i]>=top*.85).map(i=>T[i][4]));
-  const topics=order.filter(i=>sc[i]>=top*.5&&hits[i]>=2&&(lead.has(T[i][4])||sc[i]>=top*.8)).slice(0,8).map(i=>({id:i,score:sc[i]/top,w:sc[i]>=top*.85?3:sc[i]>=top*.68?2:1}));
+  const lead=new Set(order.filter(i=>sc[i]>=top*.7).map(i=>T[i][4]));
+  const topics=order.filter(i=>sc[i]>=top*.5&&hits[i]>=2&&(lead.has(T[i][4])||sc[i]>=top*.65)).slice(0,8).map(i=>({id:i,score:sc[i]/top,w:sc[i]>=top*.85?3:sc[i]>=top*.68?2:1}));
   // categories from the topics' Scopus subfields
   const catIdx=new Map(S.data.cats.map((c,i)=>[c,i])), cw=new Map();
-  for(const i of order.slice(0,12)){ const c=catIdx.get(T[i][1]); if(c!==undefined) cw.set(c,(cw.get(c)||0)+sc[i]*sc[i]); }
+  for(const i of topics.map(t=>t.id)){ const c=catIdx.get(T[i][1]); if(c!==undefined) cw.set(c,(cw.get(c)||0)+sc[i]); }
   const catsFromTopics=cw;
   // keywords shown and used: the author's own, plus their English form
   let kwShow=[];
@@ -756,7 +762,8 @@ function analyzeArticle(txt){
     for(const x of norm(title).split(" ")){ if(!x||stop.has(x)||x.length<3){ if(cur.length) chunks.push(cur.join(" ")); cur=[]; } else cur.push(x); }
     if(cur.length) chunks.push(cur.join(" "));
     kwShow=chunks.filter(c=>c.split(" ").length<=3).slice(0,6); }
-  kwShow=kwShow.filter((k,i,a)=>a.findIndex(x=>norm(x)===norm(k))===i).slice(0,20);
+  const kkey=k=>enToks(k).map(enStem).sort().join(" ")||norm(k);
+  kwShow=kwShow.filter((k,i,a)=>a.findIndex(x=>norm(x)===norm(k)||kkey(x)===kkey(k))===i).slice(0,20);
   return {lang,title,kwsFound:kws.length,topics,catsFromTopics,kws:kwShow,top};
 }
 
@@ -962,7 +969,7 @@ drop.addEventListener("drop",e=>{e.preventDefault();const f=e.dataTransfer&&e.da
 
 function applyAnalysis(txt){
   const A=analyzeArticle(txt);
-  S.prof={topics:A.topics.map(({id,w})=>({id,w})),cats:[],subs:[],kws:A.kws};
+  S.prof={topics:A.topics.map(({id,w,score})=>({id,w,s:score})),cats:[],subs:[],kws:A.kws};
   // Scopus categories: those of the journals that publish most in the detected topics, plus the topics' own subfields
   const lead=score().filter(o=>o.tf>0).sort((x,y)=>y.tf-x.tf).slice(0,40), pw=new Map();
   for(const o of lead) for(const [c] of o.j.cats) pw.set(c,(pw.get(c)||0)+o.tf/o.j.cats.length);
@@ -971,10 +978,14 @@ function applyAnalysis(txt){
   for(const [c,v] of pw) cw.set(c,v/pm);
   for(const [c,v] of A.catsFromTopics) cw.set(c,(cw.get(c)||0)+.5*v/tm);
   const carr=[...cw.entries()].sort((x,y)=>y[1]-x[1]), ctop=carr.length?carr[0][1]:1;
-  S.prof.cats=carr.filter(([,v])=>v>=ctop*.4).slice(0,4).map(([id,v])=>({id,w:v>=ctop*.7?3:v>=ctop*.5?2:1}));
+  S.prof.cats=carr.filter(([,v])=>v>=ctop*.3).slice(0,5).map(([id,v])=>({id,w:v>=ctop*.7?3:v>=ctop*.5?2:1}));
+  // each chosen field's general category too ("Economics, Econometrics and Finance (miscellaneous)" for "Economics and Econometrics")
+  const D=S.data, have=new Set(S.prof.cats.map(c=>c.id));
+  for(const c of [...S.prof.cats]){ if(c.w<2) continue; const first=D.cats[c.id].split(/[ ,]/)[0];
+    D.cats.forEach((n,i)=>{ if(!have.has(i)&&/\(miscellaneous\)$/.test(n)&&n.split(/[ ,]/)[0]===first){ S.prof.cats.push({id:i,w:1}); have.add(i);} }); }
   // DOAJ subjects (for open-access journals outside Scopus) from the journals that best fit those topics
   const seed=score().filter(o=>o.j.subs.length).slice(0,40), sw=new Map();
-  for(const o of seed) for(const t of o.j.subs) sw.set(t,(sw.get(t)||0)+o.s/o.j.subs.length);
+  for(const o of seed) for(const t of o.j.subs) if(S.data.subs[t].includes(":")) sw.set(t,(sw.get(t)||0)+o.s/o.j.subs.length);   // specific subjects only
   const arr=[...sw.entries()].sort((x,y)=>y[1]-x[1]); const top=arr.length?arr[0][1]:1;
   S.prof.subs=arr.filter(([,v])=>v>=top*.4).slice(0,3).map(([id,v])=>({id,w:v>=top*.7?2:1}));
   renderProfile(); run();
