@@ -660,7 +660,40 @@ function render(){
 const FAMN=["Ciencias sociales y educación","Salud","Ingeniería y computación","Ciencias naturales y de la vida","Artes y humanidades","Economía y negocios","Multidisciplinaria"];
 const ISTOP=new Set("of the and de del la las los el y e en for in on to da do das dos des et und der die a an journal revista".split(" "));
 function initials(t){const w=norm(t).split(" ").filter(x=>x&&!ISTOP.has(x)&&!/^\d+$/.test(x));const src=w.length?w:norm(t).split(" ");return esc(src.slice(0,3).map(x=>x[0]).join("").toUpperCase()||"·");}
-function siteUrl(j){const iss=(j.issn||"").split(" ")[0];return "https://duckduckgo.com/?q="+encodeURIComponent("!ducky "+j.t+(iss?" "+iss:"")+" journal");}
+/* The journal's own website: looked up by ISSN in OpenAlex, then in DOAJ, when the visitor clicks.
+   Until it is found (or where the browser blocks the lookup), the link opens the journal's SCImago or DOAJ page,
+   which shows the official website. */
+function fichaUrl(j){return (j.fl&1)?`https://www.scimagojr.com/journalsearch.php?q=${j.sid}&tip=sid`:`https://doaj.org/toc/${j.did}`;}
+const skey=j=>j.issn||j.t;
+function siteUrl(j){return S.sites&&S.sites[skey(j)]||fichaUrl(j);}
+S.sites={};
+try{S.sites=JSON.parse(localStorage.getItem("br-sites-v1")||"{}")||{};}catch(_){S.sites={};}
+function saveSites(){try{localStorage.setItem("br-sites-v1",JSON.stringify(S.sites));}catch(_){}}
+function okUrl(u){try{const x=new URL(u);return /^https?:$/.test(x.protocol)?x.href:"";}catch(_){return "";}}
+function withTimeout(p,ms){return Promise.race([p,new Promise((_,r)=>setTimeout(()=>r(new Error("timeout")),ms))]);}
+async function findSite(j){
+  const issns=(j.issn||"").split(" ").filter(Boolean);
+  for(const iss of issns){
+    try{const r=await withTimeout(fetch(`https://api.openalex.org/sources/issn:${iss}?select=homepage_url`),3500);
+      if(r.ok){const d=await r.json();const u=okUrl(d.homepage_url||"");if(u) return u;}}catch(_){}
+  }
+  for(const iss of issns){
+    try{const r=await withTimeout(fetch(`https://doaj.org/api/search/journals/issn:${iss}`),3500);
+      if(r.ok){const d=await r.json();const b=d.results&&d.results[0]&&d.results[0].bibjson;const u=okUrl(b&&b.ref&&b.ref.journal||"");if(u) return u;}}catch(_){}
+  }
+  return "";
+}
+document.addEventListener("click",async e=>{
+  const a=e.target.closest("a[data-site]"); if(!a) return;
+  const j=S.J[+a.dataset.site]; if(!j||S.sites[skey(j)]) return;          // known site: let the link open normally
+  const w=window.open("about:blank","_blank");                         // open now, so the browser does not block it
+  if(!w) return;                                                       // no new window allowed: the link opens the ficha
+  e.preventDefault();
+  try{w.opener=null;w.document.title="Abriendo la revista…";w.document.body.innerHTML='<p style="font:16px system-ui;margin:40px;color:#444">Buscando el sitio web de la revista…</p>';}catch(_){}
+  const u=await findSite(j);
+  if(u){S.sites[skey(j)]=u;saveSites();document.querySelectorAll(`a[data-site="${j.i}"]`).forEach(x=>x.href=u);}
+  w.location.href=u||fichaUrl(j);
+});
 function apcText(j){ if(j.fl&8) return j.fl&16?esc(j.apc):"Sin APC"; if(j.fl&4) return "Sin APC"; if(j.fl&2) return ""; return "Suscripción"; }
 const APC_TIP=j=>(j.fl&8)||(j.fl&4)?"":(j.fl&2)?"Revista de acceso abierto que no informa su APC en estas bases: revisa su web":"Revista por suscripción: publicar suele ser gratis; el acceso abierto opcional tiene costo";
 function row(o,n){
@@ -689,14 +722,14 @@ function row(o,n){
       ${cats?`<div class="matches"><span>Categorías:</span> ${cats}</div>`:""}
       ${m.length?`<div class="matches"><span>Coincide con tu artículo en:</span> ${m.map(esc).join(" · ")}</div>`:""}
       ${ai&&ai.cuidado?`<div class="ai"><b>A tener en cuenta:</b> ${esc(ai.cuidado)}</div>`:""}
-      <div class="links">${scopus?`<a href="${url}" target="_blank" rel="noopener">Ficha en SCImago</a>`:""}${doaj?`<a href="https://doaj.org/toc/${j.did}" target="_blank" rel="noopener">Ficha en DOAJ</a>`:""}<a href="${site}" target="_blank" rel="noopener">Sitio web de la revista</a><a href="${g}" target="_blank" rel="noopener">Buscar normas para autores</a></div>
+      <div class="links">${scopus?`<a href="${url}" target="_blank" rel="noopener">Ficha en SCImago</a>`:""}${doaj?`<a href="https://doaj.org/toc/${j.did}" target="_blank" rel="noopener">Ficha en DOAJ</a>`:""}<a href="${site}" data-site="${j.i}" target="_blank" rel="noopener">Sitio web de la revista</a><a href="${g}" target="_blank" rel="noopener">Buscar normas para autores</a></div>
     </div>`;
   }
   return `<li class="${open?"open":""}">
     <div class="rhead" data-i="${j.i}">
       <span class="rk">${n+1}</span>
       <span class="cover f${j.fam}" title="${FAMN[j.fam]}" aria-hidden="true"><b>${initials(j.t)}</b><small>${scopus?(j.q?"Q"+j.q:"Scopus"):"OA"}</small></span>
-      <span class="idc"><a class="jt" href="${site}" target="_blank" rel="noopener" title="Abrir el sitio web de la revista">${esc(j.t)}<svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></a><span class="sub meta">${meta}</span>${line2}<button type="button" class="btn text more-btn" data-i="${j.i}" aria-expanded="${open}">${open?"Ocultar ficha":"Ver ficha"}</button></span>
+      <span class="idc"><a class="jt" href="${site}" data-site="${j.i}" target="_blank" rel="noopener" title="Abrir el sitio web de la revista">${esc(j.t)}<svg class="go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></a><span class="sub meta">${meta}</span>${line2}<button type="button" class="btn text more-btn" data-i="${j.i}" aria-expanded="${open}">${open?"Ocultar ficha":"Ver ficha"}</button></span>
       ${qchip(j)}
       <span class="cell r c-sjr">${scopus?j.sjr.toFixed(2):'<span class="dim">—</span>'}</span>
       <span class="cell c-apc ${apc&&apc!=="Suscripción"?"":"dim"}" title="${APC_TIP(j)}">${apc||"Revisar"}</span>
