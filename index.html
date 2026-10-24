@@ -273,7 +273,7 @@ li.open .rhead{background:var(--active)}
   <div class="desk">
     <div class="side">
       <section class="panel" id="p-art" aria-labelledby="h-art">
-        <div class="ph"><h2 id="h-art">Tu artículo</h2><span class="example" id="exTag">Ejemplo</span></div>
+        <div class="ph"><h2 id="h-art">Tu artículo</h2><span class="example" id="exTag" hidden>Ejemplo</span></div>
         <label class="drop" for="file">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M12 18v-6M9 15l3-3 3 3"/></svg>
           <span><b>Subir PDF o Word</b><small>Haz clic o arrastra el archivo aquí</small></span>
@@ -281,7 +281,7 @@ li.open .rhead{background:var(--active)}
         </label>
         <p class="or">o pega el título y el resumen</p>
         <label class="sr" for="art">Título y resumen del artículo</label>
-        <textarea id="art" spellcheck="false"></textarea>
+        <textarea id="art" spellcheck="false" placeholder="Título del artículo&#10;&#10;Resumen: …&#10;&#10;Palabras clave: …"></textarea>
         <button type="button" class="btn primary" id="btnAnalyze">Buscar revistas</button>
         <div class="note" id="artStatus" role="status" hidden></div>
       </section>
@@ -435,15 +435,10 @@ const cty=c=>ES_CTY[c]||c;
 const NEGOCIO={whatsapp:"51993097406", marca:"Buscador de Revistas"};
 
 /* ---------- example (pre-filled, marked "Ejemplo") ---------- */
-const EXAMPLE={
-  text:"Trazabilidad digital de expedientes académicos en la gestión de posgrado de una universidad pública peruana\n\nResumen: Las escuelas de posgrado de universidades públicas gestionan los expedientes de planes de tesis mediante hojas de cálculo y documentos físicos, lo que dificulta conocer en qué etapa se encuentra cada trámite y genera demoras en la revisión. Este estudio diseñó e implementó una herramienta web de gestión documental para registrar la trazabilidad de los expedientes, desde su presentación hasta la aprobación, en una universidad pública del Perú. Se empleó un enfoque de investigación aplicada con diseño preexperimental. Los resultados muestran una reducción del tiempo promedio de atención y una mejora en la percepción de transparencia por parte de estudiantes y revisores. Se concluye que la transformación digital de los procesos administrativos académicos fortalece la gestión universitaria.\n\nPalabras clave: gestión documental; trazabilidad; transformación digital; educación superior; posgrado.",
-  cats:[["Education",3],["Information Systems and Management",3],["Library and Information Sciences",2],["Public Administration",2],["Management Information Systems",2]],
-  subs:[["Education: Theory and practice of education",2],["Social Sciences: Commerce: Business: Business records management",3],["Bibliography. Library science. Information resources",2],["Political science: Political institutions and public administration (General)",1],["Technology: Technology (General): Industrial engineering. Management engineering: Information technology",2]],
-  kws:["gestión documental","trazabilidad","transformación digital","educación superior","posgrado","gestión universitaria","document management","records management","traceability","digital transformation","higher education","graduate education","university administration","information systems","e-government"]
-};
+
 
 /* ---------- state ---------- */
-const S={data:null,J:[],prof:{cats:[],subs:[],kws:[]},results:[],shown:25,ai:{},isExample:true,artMeta:null};
+const S={data:null,J:[],prof:{cats:[],subs:[],kws:[]},results:[],shown:25,ai:{},isExample:false,artMeta:null};
 let downloads=null;
 
 /* ---------- data load ---------- */
@@ -813,6 +808,7 @@ function applyFilters(){
 }
 const QK=[["1","Q1","var(--q1)"],["2","Q2","var(--q2)"],["3","Q3","var(--q3)"],["4","Q4","var(--q4)"],["0","Sin cuartil","var(--q0)"],["d","Solo DOAJ","var(--hue-pale)"]];
 function qchip(j){ if(!(j.fl&1)) return `<span class="qc q0" title="No está en Scopus">DOAJ</span>`; return j.q?`<span class="qc q${j.q}">Q${j.q}</span>`:`<span class="qc q0">s/c</span>`; }
+const noArt=()=>!S.prof.cats.length&&!S.prof.subs.length&&!S.prof.kws.length&&!(S.prof.topics||[]).length;
 function render(){
   const r=S.results, c=S.counts||{}, F=S.F||{};
   const sum=QK.reduce((a,[k])=>a+(c[k]||0),0);
@@ -826,10 +822,10 @@ function render(){
   $("#count").textContent=r.length?`Mostrando ${fmt(Math.min(S.shown,r.length))} de ${fmt(r.length)}${sortNote}`:"";
   const f=$("#finding");
   if(r.length){ const t=r[0].j; f.innerHTML=`${fmt(r.length)} revistas${F.active?" con cobertura Scopus hasta 2026":""} encajan con tu artículo. <span class="muted">La más afín es</span> ${esc(t.t)}${t.fl&1&&t.q?` <span class="muted">(Q${t.q})</span>`:""}.`; }
-  else f.textContent=sum?"Ninguna revista queda con los cuartiles elegidos.":"Ninguna revista cumple estos filtros todavía.";
+  else f.textContent=noArt()?"Sube o pega tu artículo y pulsa Buscar revistas.":sum?"Ninguna revista queda con los cuartiles elegidos.":"Ninguna revista cumple estos filtros todavía.";
   if(!r.length){
     const noProf=!S.prof.cats.length&&!S.prof.subs.length&&!S.prof.kws.length&&!(S.prof.topics||[]).length;
-    $("#list").innerHTML=`<li class="empty">${noProf?"Analiza tu artículo con IA o añade al menos una categoría o palabra clave.":sum?"Activa más cuartiles arriba para ver revistas.":"Ninguna revista cumple todos los filtros. Prueba a quitar el idioma o ampliar la región."}</li>`;
+    $("#list").innerHTML=`<li class="empty">${noProf?"Aquí aparecerán las revistas para tu artículo. Sube el PDF o Word, o pega el título, el resumen y las palabras clave, y pulsa <b>Buscar revistas</b>.":sum?"Activa más cuartiles arriba para ver revistas.":"Ninguna revista cumple todos los filtros. Prueba a quitar el idioma o ampliar la región."}</li>`;
     $("#btnMore").hidden=true; return;
   }
   $("#list").innerHTML=r.slice(0,S.shown).map((o,n)=>row(o,n)).join("");
@@ -1037,13 +1033,12 @@ $("#btnCopy").addEventListener("click",()=>{
 });
 
 /* ---------- boot ---------- */
-$("#art").value=EXAMPLE.text;
 $("#list").innerHTML=Array.from({length:6},()=>`<li><div class="rhead" style="cursor:default"><span class="skel" style="width:14px"></span><span class="skel" style="width:52px;height:70px"></span><span class="idc"><span class="skel" style="width:70%"></span><span class="skel" style="width:45%;height:12px"></span></span><span class="skel" style="width:32px;height:22px"></span><span class="skel"></span><span class="skel"></span><span class="skel"></span></div></li>`).join("");
 (async()=>{
   try{ await loadData(); }
   catch(e){ $("#list").innerHTML=`<li class="empty">No se pudo cargar el catálogo de revistas. Recarga la página para intentarlo otra vez.</li>`; $("#finding").textContent="El catálogo no cargó."; return; }
   const D=S.data, ci=new Map(D.cats.map((c,i)=>[c,i])), si=new Map(D.subs.map((c,i)=>[c,i]));
-  applyAnalysis(EXAMPLE.text);
+  renderProfile(); run();
 })();
 (async()=>{
   if(!window.claude||!claude.use) return;
