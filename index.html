@@ -339,6 +339,7 @@ li.open .rhead{background:var(--active)}
       </section>
       <section class="panel" id="p-prof" aria-labelledby="h-prof">
         <div class="ph"><h2 id="h-prof">Temas del artículo</h2><span class="aside">peso 1 a 3</span></div>
+        <div class="group"><span class="glabel">Temas de investigación detectados</span><div class="chips" id="topChips"></div></div>
         <div class="group"><span class="glabel">Categorías Scopus</span><div class="chips" id="catChips"></div></div>
         <div class="group"><span class="glabel">Materias DOAJ</span><div class="chips" id="subChips"></div></div>
         <div class="adder">
@@ -405,7 +406,7 @@ li.open .rhead{background:var(--active)}
         </div>
       </section>
       <div class="foot">
-        <p><b>Fuentes.</b> Scopus: SCImago Journal Rank 2025, publicado en 2026, con cuartiles, categorías y cobertura. Acceso abierto: Directory of Open Access Journals (DOAJ), con idiomas, palabras clave y APC.</p>
+        <p><b>Fuentes.</b> Scopus: SCImago Journal Rank 2025, publicado en 2026, con cuartiles, categorías y cobertura. Acceso abierto: Directory of Open Access Journals (DOAJ), con idiomas, palabras clave y APC. Temas de investigación y sitios web oficiales: OpenAlex (datos abiertos CC0), compilados por el proyecto JournalScope.</p>
         <p><b>Antes de enviar.</b> Confirma en la web de cada revista su alcance, el costo vigente y las normas para autores. Desconfía de revistas que no estén en estas bases y prometan publicación rápida.</p>
       </div>
     </section>
@@ -447,8 +448,9 @@ let downloads=null;
 
 /* ---------- data load ---------- */
 async function loadData(){
-  const r=await fetch("data.json"); if(!r.ok) throw new Error("http "+r.status);
-  const obj=await r.json();
+  const [r,rt]=await Promise.all([fetch("data.json"),fetch("topics.json")]); if(!r.ok||!rt.ok) throw new Error("http");
+  const obj=await r.json(); const topics=await rt.json();
+  buildTopicIndex(topics);
   S.data=obj;
   const subTok=obj.subs.map(s=>toks(s.replace(/:/g," ")));
   const catTok=obj.cats.map(c=>toks(c));
@@ -465,7 +467,7 @@ async function loadData(){
     for(const c of cats) for(const t of catTok[c[0]]) set.add(t);
     for(const s of r[13]) for(const t of subTok[s]) set.add(t);
     const c=obj.ctys[r[3]]||"";
-    return {i,t:r[0],issn:r[1],pub:obj.pubs[r[2]]||"",cty:c,q:r[4],sjr:r[5]/1000,h:r[6],cats,fl:r[8],cov:r[9],sid:r[10],did:r[11],kws,subs:r[13],langs:r[14].map(l=>obj.langs[l]),langEst:r[14].length?"":guessLang(r[0],c),apc:r[15],rev:r[16]>=0?obj.revs[r[16]]:"",fam:r[17]??6,set,title,latam:LATAM.has(c)};
+    return {i,t:r[0],issn:r[1],pub:obj.pubs[r[2]]||"",cty:c,q:r[4],sjr:r[5]/1000,h:r[6],cats,fl:r[8],cov:r[9],sid:r[10],did:r[11],kws,subs:r[13],langs:r[14].map(l=>obj.langs[l]),langEst:r[14].length?"":guessLang(r[0],c),apc:r[15],rev:r[16]>=0?obj.revs[r[16]]:"",fam:r[17]??6,url:r[18]||"",tp:r[19]||[],set,title,latam:LATAM.has(c)};
   });
   const m=obj.meta;
   $("#fresh").innerHTML=`Datos: <b>SCImago 2025</b> · DOAJ al <b>${fmtDate(m.doaj)}</b><br><span class="num">${fmt(m.n)}</span> revistas, <span class="num">${fmt(m.n_scopus)}</span> en Scopus`;
@@ -492,6 +494,8 @@ function fmtDate(iso){const [y,mo,d]=iso.split("-");const M=["ene","feb","mar","
 function renderProfile(){
   const P=S.prof, D=S.data;
   const chip=(label,w,kind,idx)=>`<span class="chip" title="${esc(label)}"><button class="w" data-k="${kind}" data-i="${idx}" aria-label="Cambiar peso de ${esc(label)}">${w}</button><span>${esc(label)}</span><button class="x" data-del="${kind}" data-i="${idx}" aria-label="Quitar ${esc(label)}">×</button></span>`;
+  P.topics=P.topics||[];
+  $("#topChips").innerHTML=P.topics.length?P.topics.map((c,i)=>chip(TI.T[c.id][0],c.w,"topics",i)).join(""):`<span class="none">Pulsa <b>Buscar revistas</b> para detectarlos.</span>`;
   $("#catChips").innerHTML=P.cats.length?P.cats.map((c,i)=>chip(D.cats[c.id],c.w,"cats",i)).join(""):`<span class="none">Ninguna aún.</span>`;
   $("#subChips").innerHTML=P.subs.length?P.subs.map((c,i)=>chip(shortSub(D.subs[c.id]),c.w,"subs",i)).join(""):`<span class="none">Ninguna aún.</span>`;
   $("#kwChips").innerHTML=P.kws.length?P.kws.map((k,i)=>`<span class="chip kw"><span>${esc(k)}</span><button class="x" data-del="kws" data-i="${i}" aria-label="Quitar ${esc(k)}">×</button></span>`).join(""):`<span class="none">Ninguna aún.</span>`;
@@ -510,6 +514,7 @@ $("#addTopic").addEventListener("input",()=>{
   const q=norm($("#addTopic").value); const box=$("#topicSugg");
   if(q.length<2||!S.data){box.hidden=true;return;}
   const out=[];
+  if(TI.ready) TI.T.forEach((t,i)=>{if(norm(t[0]).includes(q)) out.push({k:"topics",i,l:t[0],tag:"Tema"});});
   S.data.cats.forEach((c,i)=>{if(norm(c).includes(q)) out.push({k:"cats",i,l:c,tag:"Scopus"});});
   S.data.subs.forEach((c,i)=>{if(norm(c).includes(q)) out.push({k:"subs",i,l:c,tag:"DOAJ"});});
   out.sort((a,b)=>a.l.length-b.l.length);
@@ -525,7 +530,7 @@ $("#addTopic").addEventListener("keydown",e=>{
 $("#topicSugg").addEventListener("click",e=>{
   const b=e.target.closest("button[data-k]"); if(!b) return;
   const k=b.dataset.k, i=+b.dataset.i;
-  if(!S.prof[k].some(x=>x.id===i)) S.prof[k].push({id:i,w:2});
+  S.prof[k]=S.prof[k]||[]; if(!S.prof[k].some(x=>x.id===i)) S.prof[k].push({id:i,w:2});
   $("#addTopic").value=""; $("#topicSugg").hidden=true; markEdited(); renderProfile(); run();
 });
 $("#addKw").addEventListener("keydown",e=>{
@@ -540,6 +545,7 @@ function score(){
   const P=S.prof, J=S.J, N=J.length;
   const catW=new Map(P.cats.map(c=>[c.id,c.w])), catSum=P.cats.reduce((a,c)=>a+c.w,0);
   const subSum=P.subs.reduce((a,c)=>a+c.w,0);
+  const TW={3:9,2:3,1:1}, tops=P.topics||[], tpW=new Map(tops.map(t=>[t.id,TW[t.w]||1])), tpSum=tops.reduce((a,t)=>a+(TW[t.w]||1),0);
   // keywords: token stems, idf by document frequency of a full match
   const K=P.kws.map(k=>({k,t:[...new Set(toks(k))]})).filter(x=>x.t.length);
   const df=K.map(()=>0);
@@ -568,17 +574,190 @@ function score(){
         if(f===1){ const inTitle=x.t.every(t=>j.title.has(t)); ks+=x.idf*(inTitle?1.3:1); mk.push(x.k); }
         else if(f>=.5) ks+=x.idf*.3*f; }
       ks/=kwSum; if(ks>maxKw) maxKw=ks; }
+    let tf=0, mt=[];
+    if(tpSum && j.tp.length){ for(const [t,sh] of j.tp){const w=tpW.get(t); if(w){tf+=w*Math.min(sh,25); mt.push(t);} } tf=tf/tpSum/25; }  // a share above 25% adds no more: breadth on the main topic wins over a niche
     const topical=Math.max(cs, ss*.9);
-    if(topical<=0 && ks<=0) continue;
-    out.push({j,cs,ss,ks,topical,mc,ms,mk});
+    if(topical<=0 && ks<=0 && tf<=0) continue;
+    out.push({j,cs,ss,ks,tf,topical,mc,ms,mk,mt});
   }
   const hasT=catSum+subSum>0, hasK=kwSum>0;
+  let maxTf=0; for(const o of out) if(o.tf>maxTf) maxTf=o.tf;
   for(const o of out){
     const kn=maxKw?o.ks/maxKw:0;
-    o.s=hasT&&hasK? .45*o.topical+.55*kn : hasT? o.topical : kn;
+    const base=hasT&&hasK? .45*o.topical+.55*kn : hasT? o.topical : kn;
+    if(tpSum&&maxTf){ // what the journal actually publishes leads; journals without topic data are estimated from their categories
+      const tn=o.j.tp.length? Math.sqrt(o.tf/maxTf) : o.topical*.3+kn*.2;
+      o.s=.5*tn+.3*o.topical+.2*kn;
+    } else o.s=base;
   }
   out.sort((a,b)=>b.s-a.s);
   return out;
+}
+
+/* Spanish and Portuguese academic vocabulary -> English, for matching articles to English topic profiles.
+   Keys are lowercase without accents. Only words whose English form is not reachable by the cognate rules
+   (educación -> education) need an entry. */
+const LEX_RAW = `
+nino:child|ninos:children|nina:girl|ninas:girls|nino s:children|infancia:childhood|infantil:child|adolescente:adolescent|adolescentes:adolescents|joven:young|jovenes:youth|juventud:youth|adulto:adult|adultos:adults|mayor:older|mayores:elderly|anciano:elderly|vejez:aging|envejecimiento:aging|mujer:woman|mujeres:women|hombre:man|hombres:men|madre:mother|madres:mothers|padre:father|padres:parents|familia:family|familias:families|hijo:child|hijos:children|embarazo:pregnancy|embarazada:pregnant|gestante:pregnant|parto:childbirth|recien nacido:newborn|neonato:neonate|lactancia:breastfeeding|leche:milk|
+salud:health|enfermedad:disease|enfermedades:diseases|enfermo:patient|paciente:patient|pacientes:patients|medico:physician|medicos:physicians|enfermera:nurse|enfermeria:nursing|hospital:hospital|cuidado:care|cuidados:care|atencion:care|tratamiento:treatment|tratamientos:treatments|sangre:blood|hierro:iron|corazon:heart|cardiaco:cardiac|pulmon:lung|pulmonar:pulmonary|rinon:kidney|renal:renal|higado:liver|hepatico:hepatic|cerebro:brain|cerebral:brain|piel:skin|hueso:bone|huesos:bones|dientes:teeth|diente:tooth|bucal:oral|boca:mouth|ojo:eye|ojos:eyes|oido:hearing|dolor:pain|cancer:cancer|tumor:tumor|muerte:death|mortalidad:mortality|vida:life|calidad de vida:quality of life|peso:weight|sobrepeso:overweight|obesidad:obesity|desnutricion:malnutrition|alimentacion:nutrition|alimento:food|alimentos:food|comida:food|dieta:diet|ejercicio:exercise|actividad fisica:physical activity|sueno:sleep|estres:stress|ansiedad:anxiety|depresion:depression|suicidio:suicide|consumo:consumption|alcohol:alcohol|tabaco:tobacco|droga:drug|drogas:drugs|farmaco:drug|farmacos:drugs|medicamento:medication|medicamentos:medications|vacuna:vaccine|vacunas:vaccines|vacunacion:vaccination|herida:wound|cirugia:surgery|quirurgico:surgical|riesgo:risk|riesgos:risks|factor:factor|factores:factors|sintoma:symptom|sintomas:symptoms|diagnostico:diagnosis|altura:altitude|altitud:altitude|altoandino:andean|altoandinas:andean|altoandina:andean|altoandinos:andean|andino:andean|andina:andean|andinas:andean|
+educacion:education|ensenanza:teaching|aprendizaje:learning|aprender:learning|estudiante:student|estudiantes:students|alumno:student|alumnos:students|docente:teacher|docentes:teachers|profesor:teacher|profesores:teachers|maestro:teacher|maestros:teachers|escuela:school|escuelas:schools|escolar:school|colegio:school|aula:classroom|clase:class|universidad:university|universidades:universities|universitario:university|universitaria:university|posgrado:graduate|postgrado:graduate|pregrado:undergraduate|tesis:thesis|curriculo:curriculum|evaluacion:assessment|rendimiento:performance|desempeno:performance|habilidades:skills|habilidad:skill|competencias:competencies|competencia:competence|lectura:reading|escritura:writing|matematicas:mathematics|ciencias:science|conocimiento:knowledge|formacion:training|capacitacion:training|virtual:online|en linea:online|a distancia:distance|
+gestion:management|administracion:administration|empresa:company|empresas:companies|negocio:business|negocios:business|trabajo:work|trabajador:worker|trabajadores:workers|empleo:employment|desempleo:unemployment|salario:wage|salarios:wages|ingreso:income|ingresos:income|pobreza:poverty|desigualdad:inequality|crecimiento:growth|desarrollo:development|mercado:market|mercados:markets|precio:price|precios:prices|costo:cost|costos:costs|gasto:expenditure|impuesto:tax|impuestos:taxes|tributario:tax|fiscal:fiscal|banco:bank|bancos:banks|banca:banking|finanzas:finance|financiero:financial|financiera:financial|contabilidad:accounting|auditoria:audit|deuda:debt|ahorro:savings|inversion:investment|comercio:trade|exportaciones:exports|importaciones:imports|cliente:customer|clientes:customers|consumidor:consumer|consumidores:consumers|marca:brand|ventas:sales|emprendimiento:entrepreneurship|emprendedor:entrepreneur|liderazgo:leadership|lider:leader|cadena de suministro:supply chain|proveedor:supplier|toma de decisiones:decision making|eficiencia:efficiency|productividad:productivity|rentabilidad:profitability|
+gobierno:government|estado:state|publico:public|publica:public|politica:policy|politicas:policies|ley:law|leyes:laws|derecho:law|derechos:rights|justicia:justice|juez:judge|tribunal:court|delito:crime|delitos:crimes|violencia:violence|seguridad:security|corrupcion:corruption|eleccion:election|elecciones:elections|voto:vote|partido:party|ciudadano:citizen|ciudadanos:citizens|ciudadania:citizenship|municipio:municipality|municipal:municipal|local:local|regional:regional|rural:rural|urbano:urban|ciudad:city|ciudades:cities|vivienda:housing|migracion:migration|migrante:migrant|migrantes:migrants|genero:gender|indigena:indigenous|indigenas:indigenous|pueblo:people|pueblos:peoples|comunidad:community|comunidades:communities|sociedad:society|social:social|cultura:culture|cultural:cultural|historia:history|historico:historical|memoria:memory|religion:religion|iglesia:church|filosofia:philosophy|etica:ethics|lengua:language|idioma:language|lenguaje:language|literatura:literature|novela:novel|poesia:poetry|arte:art|artes:arts|musica:music|cine:film|medios:media|prensa:press|periodismo:journalism|redes sociales:social media|comunicacion:communication|
+agua:water|suelo:soil|suelos:soils|tierra:land|bosque:forest|bosques:forests|arbol:tree|arboles:trees|planta:plant|plantas:plants|hoja:leaf|hojas:leaves|semilla:seed|semillas:seeds|cultivo:crop|cultivos:crops|cosecha:harvest|riego:irrigation|agricola:agricultural|agricultura:agriculture|ganado:livestock|ganaderia:livestock|vaca:cow|vacas:cows|bovino:cattle|bovinos:cattle|cerdo:pig|cerdos:pigs|aves:birds|pollo:chicken|pollos:chickens|pez:fish|peces:fish|pesca:fishing|mar:sea|marino:marine|costa:coast|rio:river|rios:rivers|lago:lake|cuenca:basin|lluvia:rainfall|clima:climate|cambio climatico:climate change|temperatura:temperature|calor:heat|sequia:drought|inundacion:flood|terremoto:earthquake|sismo:earthquake|volcan:volcano|montana:mountain|glaciar:glacier|aire:air|contaminacion:pollution|residuos:waste|basura:waste|reciclaje:recycling|biodiversidad:biodiversity|especie:species|especies:species|ecosistema:ecosystem|insecto:insect|insectos:insects|plaga:pest|plagas:pests|enfermedades de plantas:plant disease|trigo:wheat|maiz:maize|arroz:rice|papa:potato|papas:potatoes|cafe:coffee|cacao:cocoa|fruta:fruit|frutas:fruits|
+energia:energy|electrica:electric|electricidad:electricity|solar:solar|eolica:wind|viento:wind|combustible:fuel|petroleo:oil|gas:gas|motor:engine|vehiculo:vehicle|vehiculos:vehicles|transporte:transport|carretera:road|puente:bridge|edificio:building|edificios:buildings|construccion:construction|concreto:concrete|hormigon:concrete|acero:steel|madera:wood|material:material|materiales:materials|resistencia:strength|diseno:design|fabricacion:manufacturing|maquina:machine|maquinas:machines|herramienta:tool|herramientas:tools|sensor:sensor|sensores:sensors|red:network|redes:networks|datos:data|base de datos:database|programa:software|software:software|aplicacion:application|aplicaciones:applications|computadora:computer|ordenador:computer|computacional:computational|algoritmo:algorithm|algoritmos:algorithms|aprendizaje automatico:machine learning|aprendizaje profundo:deep learning|inteligencia artificial:artificial intelligence|red neuronal:neural network|redes neuronales:neural networks|vision por computadora:computer vision|imagen:image|imagenes:images|dron:drone|drones:drones|nube:cloud|seguridad informatica:cybersecurity|ciberseguridad:cybersecurity|sistema de informacion:information system|sistemas de informacion:information systems|trazabilidad:traceability|expediente:record|expedientes:records|documento:document|documentos:documents|documental:document|archivo:archive|archivos:archives|biblioteca:library|bibliotecas:libraries|digital:digital|digitalizacion:digitalization|plataforma:platform|web:web|
+quimica:chemistry|quimico:chemical|fisica:physics|biologia:biology|matematica:mathematics|estadistica:statistics|muestra:sample|muestras:samples|encuesta:survey|entrevista:interview|entrevistas:interviews|cuestionario:questionnaire|metodo:method|metodos:methods|metodologia:methodology|modelo:model|modelos:models|analisis:analysis|estudio:study|estudios:studies|investigacion:research|resultado:result|resultados:results|hallazgos:findings|objetivo:objective|revision:review|revision sistematica:systematic review|metaanalisis:meta analysis|transversal:cross sectional|cohorte:cohort|ensayo:trial|ensayo clinico:clinical trial|regresion:regression|prevalencia:prevalence|incidencia:incidence|propuesta:proposal|mejora:improvement|proceso:process|procesos:processes|calidad:quality|indicador:indicator|indicadores:indicators|percepcion:perception|satisfaccion:satisfaction|tiempo:time|nivel:level|
+confort:comfort|confort termico:thermal comfort|termico:thermal|termica:thermal|aislamiento:insulation|aislamiento termico:thermal insulation|ganancia solar:solar gain|pasiva:passive|pasivo:passive|bioclimatica:bioclimatic|arquitectura bioclimatica:bioclimatic architecture|eficiencia energetica:energy efficiency|invierno:winter|verano:summer|interior:indoor|vivienda rural:rural housing|viviendas:dwellings|quinua:quinoa|capacidad antioxidante:antioxidant capacity|antioxidantes:antioxidants|compuestos fenolicos:phenolic compounds|polifenoles:polyphenols|flavonoides:flavonoids|alimentos funcionales:functional foods|grano:grain|granos:grains|contacto de lenguas:language contact|contacto linguistico:language contact|castellano:spanish|espanol:spanish|bilinguismo:bilingualism|hablantes:speakers|habla:speech|camelidos:camelids|camelidos sudamericanos:south american camelids|parasitos:parasites|parasitosis:parasitic infection|nematodos:nematodes|crias:young animals|muestras fecales:fecal samples|educacion superior:higher education|ensino superior:higher education|gestion documental:document management|gestao documental:document management|transformacion digital:digital transformation|transformacao digital:digital transformation|rendimiento academico:academic performance|desempeno academico:academic performance|salud publica:public health|saude publica:public health|salud mental:mental health|saude mental:mental health|derechos humanos:human rights|direitos humanos:human rights|cambio climatico:climate change|medio ambiente:environment|educacion basica:basic education|educacion secundaria:secondary education|formacion docente:teacher training|politica publica:public policy|politicas publicas:public policies|violencia de genero:gender violence|medidas de proteccion:protection measures|derecho de familia:family law|acceso a la justicia:access to justice|america latina:latin america|desarrollo local:local development|secundaria:secondary|secundario:secondary|primaria:primary|primario:primary|inicial:early|basica:basic|acceso:access|medidas:measures|medida:measure|teledeteccion:remote sensing|percepcion remota:remote sensing|sensoriamento remoto:remote sensing|sensoriamento:sensing|desmatamento:deforestation|deforestacion:deforestation|mypes:small enterprises|mype:small enterprise|pymes:small and medium enterprises|pyme:small and medium enterprise|micro y pequenas empresas:small enterprises|pequenas empresas:small enterprises|informalidad:informality|informal:informal|productividad total de los factores:total factor productivity|turismo:tourism|turista:tourist|turistas:tourists|turistico:tourism|comunitario:community|comunitaria:community|campesino:peasant|campesinas:peasant|campesinos:peasants|patrimonio:heritage|visitantes:visitors|gamificacion:gamification|motivacion:motivation|cuasiexperimental:quasi experimental|calificaciones:grades|sistema:system|sistemas:systems|tecnologia:technology|tecnologias:technologies|victima:victim|victimas:victims|juzgado:court|juzgados:courts|judicial:judicial|policial:police|seguimiento:monitoring|cumplimiento:compliance|ejecucion:enforcement|hemoglobina:hemoglobin|suplementacion:supplementation|ferropenica:iron deficiency|ferropenia:iron deficiency|menores de cinco anos:under five|chuvas:rainfall|precipitacao:precipitation|satelite:satellite|series historicas:time series|areas desmatadas:deforested areas|criancas:children|saude:health|doenca:disease|doencas:diseases|ensino:teaching|aprendizagem:learning|aluno:student|alunos:students|professor:teacher|professores:teachers|escola:school|escolas:schools|trabalho:work|trabalhadores:workers|empresa:company|gestao:management|pesquisa:research|estudo:study|politicas publicas:public policy|mulheres:women|agua:water|solo:soil|floresta:forest|plantas:plants|cultura:culture|desenvolvimento:development|sociedade:society|dados:data|rede:network|ferramenta:tool|cuidado:care|enfermagem:nursing|atencao:care|idosos:elderly|gravidez:pregnancy|amamentacao:breastfeeding|alimentacao:nutrition|qualidade:quality|cidade:city|habitacao:housing|direito:law|leis:laws|governo:government|economia:economy|mercado:market|precos:prices|custo:cost|renda:income|pobreza:poverty|ambiente:environment|meio ambiente:environment|mudancas climaticas:climate change|chuva:rainfall|seca:drought|rio:river|mar:sea|peixes:fish|gado:livestock|milho:maize|arroz:rice|trigo:wheat|cafe:coffee|energia:energy|transporte:transport|construcao:construction|madeira:wood|aco:steel|computador:computer|aprendizado de maquina:machine learning|inteligencia artificial:artificial intelligence|`;
+const LEX = new Map();
+for (const pair of LEX_RAW.split("|")) {
+  const k = pair.indexOf(":"); if (k < 1) continue;
+  const es = pair.slice(0, k).trim(), en = pair.slice(k + 1).trim();
+  if (es && en && !LEX.has(es)) LEX.set(es, en);
+}
+
+/* ---------- topic engine (no AI) ----------
+   1. The article is split into title, keywords and body, its language is detected, and Spanish or
+      Portuguese words are carried into English (dictionary first, then cognate rules checked against
+      the topic vocabulary).
+   2. It is compared with the 4,516 OpenAlex research topics (name, keywords and description) by
+      TF-IDF, with a bonus for whole keyword phrases found in the text.
+   3. The best topics decide the Scopus categories and are matched against what each journal
+      actually publishes (its share of works per topic). */
+const EN_STOP=new Set("a an the of and or in on for to with by from at as is are was were be been being this that these those it its into using use used based study studies analysis effect effects between among within via under over their our we new approach case evidence role impact also has have had not but than which who whom whose while during after before about such may can could would should more most other some each both all any per its how what when where why there here thus however therefore toward towards".split(" "));
+const ES_STOP=new Set("el la los las un una unos unas de del al y e o u en con por para sin sobre entre desde hasta como que se su sus es son fue fueron ser este esta estos estas ese esa lo le les mas muy ya no si tambien cuando donde cual cuales porque pero sino segun mediante durante tras ante bajo cada otro otra otros otras dicho dicha dichos estudio presente trabajo resultados objetivo metodo".split(" "));
+const PT_STOP=new Set("o a os as um uma de do da dos das no na nos nas em com por para sem sobre entre desde ate como que se seu sua seus suas e foi foram ser este esta estes estas esse essa isso mais muito ja nao sim tambem quando onde qual quais porque mas segundo atraves durante apos cada outro outra outros outras".split(" "));
+function enStem(t){
+  if(t.length>4&&t.endsWith("ies")) return t.slice(0,-3)+"y";
+  if(t.length>4&&t.endsWith("sses")) return t.slice(0,-2);
+  if(t.length>3&&t.endsWith("s")&&!/(ss|us|is)$/.test(t)) t=t.slice(0,-1);
+  if(t.length>7&&t.endsWith("ional")) t=t.slice(0,-2);
+  if(t.length>6&&t.endsWith("ing")) t=t.slice(0,-3);
+  else if(t.length>6&&t.endsWith("ed")) t=t.slice(0,-2);
+  return t;
+}
+const enToks=s=>norm(s).split(" ").filter(t=>t&&t.length>1&&!EN_STOP.has(t));
+const TI={ready:false};
+const GEO=new Set("peru peruvian lima cusco puno andean andes latin america american brazil brazilian amazon amazonia mexico mexican colombia colombian chile chilean argentina argentine ecuador bolivia venezuela cuba spain spanish portugal africa african asia asian europe european china chinese india indian country countrie region regional".split(" "));
+const ADJ_RE=/(ic|al|ary|ive|ous|ed|ent|ant|ar|ian|ile|ory|ible|able)$/;
+const ADJ=new Set("public secondary primary social academic climate early basic remote small total informal clinical mental physical digital urban rural local global human".split(" "));
+const isAdj=w=>ADJ.has(w)||ADJ_RE.test(w);
+function buildTopicIndex(T){
+  const post=new Map(), vocab=new Set(), phrases=new Map(), norms=new Float64Array(T.length), tfs=[], names=[];
+  T.forEach((t,ti)=>{
+    const tf=new Map(), add=(s,w)=>{for(const x of enToks(s)){vocab.add(x);const k=enStem(x);tf.set(k,(tf.get(k)||0)+w);}};
+    add(t[0],3); add(t[2].replace(/\|/g," "),2); add(t[3],1);
+    for(const p of t[2].split("|")){const n=enToks(p).map(enStem).join(" "); if(n.includes(" ")){ if(!phrases.has(n)) phrases.set(n,[]); phrases.get(n).push(ti);} }
+    const nm=enToks(t[0]).map(enStem).join(" "); if(nm.includes(" ")){ if(!phrases.has(nm)) phrases.set(nm,[]); phrases.get(nm).push(ti); }
+    tfs.push(tf); names.push([...new Set(enToks(t[0]).map(enStem))]);
+    for(const [k,v] of tf){ if(!post.has(k)) post.set(k,[]); post.get(k).push([ti,v]); }
+  });
+  const N=T.length, idf=new Map();
+  for(const [k,arr] of post) idf.set(k,Math.log((N+1)/(arr.length+0.5)));
+  tfs.forEach((tf,ti)=>{let s=0;for(const [k,v] of tf){const w=idf.get(k)*(1+Math.log(v));s+=w*w;}norms[ti]=Math.sqrt(s)||1;});
+  Object.assign(TI,{T,post,idf,norms,vocab,phrases,names,ready:true});
+}
+/* Spanish/Portuguese -> English */
+const COG=[["ciones",["tions"]],["cion",["tion"]],["coes",["tions"]],["cao",["tion"]],["siones",["sions"]],["sion",["sion"]],["soes",["sions"]],["sao",["sion"]],
+ ["idades",["ities"]],["idade",["ity"]],["idad",["ity"]],["edad",["ety"]],["dades",["ties"]],["dade",["ty"]],["dad",["ty"]],
+ ["encias",["ences"]],["encia",["ence","ency"]],["ancias",["ances"]],["ancia",["ance","ancy"]],["mente",["ly"]],
+ ["ismos",["isms"]],["ismo",["ism"]],["istas",["ists"]],["ista",["ist"]],["ivos",["ive"]],["ivas",["ive"]],["ivo",["ive"]],["iva",["ive"]],
+ ["osos",["ous"]],["osas",["ous"]],["oso",["ous"]],["osa",["ous"]],["icos",["ic","ical"]],["icas",["ic","ics","ical"]],["ico",["ic","ical","al"]],["ica",["ic","ical","ics","al"]],
+ ["ias",["ies"]],["ia",["y","ia"]],["ales",["al"]],["entes",["ent"]],["ente",["ent"]],["antes",["ant"]],["ante",["ant"]],
+ ["ores",["or","ors"]],["os",["s",""]],["as",["s",""]],["es",["s",""]],["o",["","e"]],["a",["","e"]],["e",["","e"]]];
+const PRE=[["tecno","techno"],["term","therm"],["teor","theor"],["tema","thema"],["orto","ortho"],["anest","anesth"],["cato","catho"],["fisi","physi"],["filos","philos"],["farmac","pharmac"],["fotograf","photograph"],["fenomen","phenomen"],["psico","psycho"],["sist","syst"],["tip","typ"],["estr","str"],["esp","sp"],["est","st"],["esc","sc"]];
+const COG_CACHE=new Map();
+function cognate(w){
+  if(COG_CACHE.has(w)) return COG_CACHE.get(w);
+  let res="";
+  if(TI.vocab.has(w)) res=w;
+  else{
+    const bases=[w]; for(const [a,b] of PRE) if(w.startsWith(a)) bases.push(b+w.slice(a.length));
+    outer: for(const b of bases){
+      if(TI.vocab.has(b)){res=b;break;}
+      for(const [suf,reps] of COG){ if(b.length>suf.length+2&&b.endsWith(suf)){ const stem=b.slice(0,-suf.length);
+          for(const r of reps){ const c=stem+r; if(c.length>3&&TI.vocab.has(c)){res=c;break outer;} }
+          break; } }
+    }
+  }
+  COG_CACHE.set(w,res); return res;
+}
+function detectLang(text){
+  let es=0,pt=0,en=0; for(const t of norm(text).split(" ")){ if(ES_STOP.has(t)) es++; if(PT_STOP.has(t)) pt++; if(EN_STOP.has(t)) en++; }
+  return en>=es&&en>=pt?"en":pt>es?"pt":"es";
+}
+function toEnglish(text,lang){
+  const w=norm(text).split(" ").filter(Boolean), out=[];
+  for(let i=0;i<w.length;i++){
+    if(lang!=="en"){
+      let hit=null;
+      for(const n of [5,4,3,2]){ if(i+n<=w.length){ const p=w.slice(i,i+n).join(" "); if(LEX.has(p)){hit=[LEX.get(p),n];break;} } }
+      if(hit){ out.push(...hit[0].split(" ")); i+=hit[1]-1; continue; }
+      const x=w[i];
+      if((lang==="es"?ES_STOP:PT_STOP).has(x)) continue;
+      if(LEX.has(x)){ out.push(...LEX.get(x).split(" ")); continue; }
+      const c=cognate(x); if(c){ out.push(c); continue; }
+      if(x.length>3) out.push(x);
+    } else out.push(w[i]);
+  }
+  return out.filter(t=>!EN_STOP.has(t)&&t.length>1);
+}
+function splitArticle(txt){
+  const kws=[]; let rest=txt;
+  const re=/(?:palabras[\s-]*clave|keywords?|key\s*words|palavras[\s-]*chave|descriptores|index terms)\s*[:：.\-–—]\s*([^\n]+)/gi;
+  let m; while((m=re.exec(txt))){ for(const p of m[1].split(/[;,·•|]/)){ const k=p.replace(/[.\s]+$/,"").trim(); if(k.length>1&&k.length<70&&!kws.some(x=>norm(x)===norm(k))) kws.push(k);} rest=rest.replace(m[0]," "); }
+  const lines=rest.split("\n").map(x=>x.trim()).filter(Boolean);
+  let title=""; if(lines.length&&lines[0].length<=300&&!/^(resumen|abstract|resumo)\b/i.test(lines[0])) title=lines.shift();
+  const body=lines.join(" ").replace(/^(resumen|abstract|resumo)\s*[:.]?\s*/i,"");
+  return {title,kws,body};
+}
+function analyzeArticle(txt){
+  const {title,kws,body}=splitArticle(txt);
+  const lang=detectLang(title+" "+body+" "+kws.join(" "));
+  const vec=new Map(), seqs=[];
+  const feed=(s,w)=>{const t=toEnglish(s,lang); seqs.push(t); for(const x of t){const k=enStem(x); vec.set(k,(vec.get(k)||0)+w);} return t;};
+  feed(title,3); const kwEn=kws.map(k=>feed(k,3).join(" ")); feed(body,1);
+  for(const [k,v] of vec) vec.set(k,(1+Math.log(v))*(GEO.has(k)?0.35:1));
+  // topic scores
+  const T=TI.T, sc=new Float64Array(T.length), why=new Map();
+  const hits=new Uint8Array(T.length);
+  for(const [k,wa] of vec){ const p=TI.post.get(k); if(!p) continue; const idf=TI.idf.get(k);
+    if(idf<1) continue;                                   // words present in most topics say nothing
+    for(const [ti,tf] of p){ sc[ti]+=wa*idf*idf*(1+Math.log(tf)); if(!GEO.has(k)&&hits[ti]<255) hits[ti]++; } }
+  let anorm=0; for(const [k,wa] of vec){const i=TI.idf.get(k)||0; anorm+=(wa*i)**2;} anorm=Math.sqrt(anorm)||1;
+  for(let i=0;i<sc.length;i++){
+    if(!sc[i]) continue;
+    sc[i]=sc[i]/(TI.norms[i]*anorm)*Math.sqrt(Math.min(hits[i],4)/4);   // a topic must match several distinct words
+    const nm=TI.names[i]; let c=0; for(const x of nm) if(vec.has(x)) c++;
+    sc[i]*=0.4+0.6*(nm.length?c/nm.length:0);
+    if(nm.length&&c/nm.length<0.5){ let best="",bi=0; for(const x of nm){const v=TI.idf.get(x)||0; if(v>bi){bi=v;best=x;}} if(best&&!vec.has(best)) sc[i]*=0.6; }  // its most specific word is missing
+                        // and its own name should appear in the article
+  }
+  for(const seq of seqs){ const st=seq.map(enStem);
+    for(let n=2;n<=4;n++) for(let i=0;i+n<=st.length;i++){ const g=st.slice(i,i+n);
+      const keys=[g.join(" ")]; if(n===2&&lang!=="en") keys.push(g[1]+" "+g[0]);
+      for(const key of keys){ const p=TI.phrases.get(key); if(p) for(const ti of p){ sc[ti]+=0.05*n; if(!why.has(ti)) why.set(ti,key); } } } }
+  const order=[...sc.keys()].sort((a,b)=>sc[b]-sc[a]).slice(0,40);
+  const top=sc[order[0]]||0;
+  // keep topics that agree with the main ones: same research field, unless the match is very strong
+  const lead=new Set(order.filter(i=>sc[i]>=top*.85).map(i=>T[i][4]));
+  const topics=order.filter(i=>sc[i]>=top*.5&&hits[i]>=2&&(lead.has(T[i][4])||sc[i]>=top*.8)).slice(0,8).map(i=>({id:i,score:sc[i]/top,w:sc[i]>=top*.85?3:sc[i]>=top*.68?2:1}));
+  // categories from the topics' Scopus subfields
+  const catIdx=new Map(S.data.cats.map((c,i)=>[c,i])), cw=new Map();
+  for(const i of order.slice(0,12)){ const c=catIdx.get(T[i][1]); if(c!==undefined) cw.set(c,(cw.get(c)||0)+sc[i]*sc[i]); }
+  const catsFromTopics=cw;
+  // keywords shown and used: the author's own, plus their English form
+  let kwShow=[];
+  kws.forEach((k,i)=>{ kwShow.push(k); let e=kwEn[i]; if(lang!=="en"&&e){ const p=e.split(" ");
+      if(p.length===2&&!LEX.has(norm(k))){ // Spanish/Portuguese put the adjective after the noun: use the English order
+        const a=p.map(enStem).join(" "), b=enStem(p[1])+" "+enStem(p[0]);
+        if(TI.phrases.has(b)||(!TI.phrases.has(a)&&!isAdj(p[0]))) e=p[1]+" "+p[0]; }
+      if(norm(e)!==norm(k)&&p.length<=4) kwShow.push(e);} });
+  if(!kws.length){ // no keyword line: the strongest phrases of the title and the topics' matched phrases
+    const stop=lang==="en"?EN_STOP:lang==="pt"?PT_STOP:ES_STOP, chunks=[]; let cur=[];
+    for(const x of norm(title).split(" ")){ if(!x||stop.has(x)||x.length<3){ if(cur.length) chunks.push(cur.join(" ")); cur=[]; } else cur.push(x); }
+    if(cur.length) chunks.push(cur.join(" "));
+    kwShow=chunks.filter(c=>c.split(" ").length<=3).slice(0,6); }
+  kwShow=kwShow.filter((k,i,a)=>a.findIndex(x=>norm(x)===norm(k))===i).slice(0,20);
+  return {lang,title,kwsFound:kws.length,topics,catsFromTopics,kws:kwShow,top};
 }
 
 /* ---------- filters ---------- */
@@ -642,7 +821,7 @@ function render(){
   if(r.length){ const t=r[0].j; f.innerHTML=`${fmt(r.length)} revistas${F.active?" con cobertura Scopus hasta 2026":""} encajan con tu artículo. <span class="muted">La más afín es</span> ${esc(t.t)}${t.fl&1&&t.q?` <span class="muted">(Q${t.q})</span>`:""}.`; }
   else f.textContent=sum?"Ninguna revista queda con los cuartiles elegidos.":"Ninguna revista cumple estos filtros todavía.";
   if(!r.length){
-    const noProf=!S.prof.cats.length&&!S.prof.subs.length&&!S.prof.kws.length;
+    const noProf=!S.prof.cats.length&&!S.prof.subs.length&&!S.prof.kws.length&&!(S.prof.topics||[]).length;
     $("#list").innerHTML=`<li class="empty">${noProf?"Analiza tu artículo con IA o añade al menos una categoría o palabra clave.":sum?"Activa más cuartiles arriba para ver revistas.":"Ninguna revista cumple todos los filtros. Prueba a quitar el idioma o ampliar la región."}</li>`;
     $("#btnMore").hidden=true; return;
   }
@@ -665,7 +844,7 @@ function initials(t){const w=norm(t).split(" ").filter(x=>x&&!ISTOP.has(x)&&!/^\
    which shows the official website. */
 function fichaUrl(j){return (j.fl&1)?`https://www.scimagojr.com/journalsearch.php?q=${j.sid}&tip=sid`:`https://doaj.org/toc/${j.did}`;}
 const skey=j=>j.issn||j.t;
-function siteUrl(j){return S.sites&&S.sites[skey(j)]||fichaUrl(j);}
+function siteUrl(j){return j.url||S.sites&&S.sites[skey(j)]||fichaUrl(j);}
 S.sites={};
 try{S.sites=JSON.parse(localStorage.getItem("br-sites-v1")||"{}")||{};}catch(_){S.sites={};}
 function saveSites(){try{localStorage.setItem("br-sites-v1",JSON.stringify(S.sites));}catch(_){}}
@@ -685,7 +864,7 @@ async function findSite(j){
 }
 document.addEventListener("click",async e=>{
   const a=e.target.closest("a[data-site]"); if(!a) return;
-  const j=S.J[+a.dataset.site]; if(!j||S.sites[skey(j)]) return;          // known site: let the link open normally
+  const j=S.J[+a.dataset.site]; if(!j||j.url||S.sites[skey(j)]) return;          // known site: let the link open normally
   const w=window.open("about:blank","_blank");                         // open now, so the browser does not block it
   if(!w) return;                                                       // no new window allowed: the link opens the ficha
   e.preventDefault();
@@ -702,7 +881,7 @@ function row(o,n){
   const g=`https://www.google.com/search?q=${encodeURIComponent('"'+j.t+'" author guidelines')}`;
   const site=siteUrl(j);
   const pct=Math.round(o.rel*100), ai=S.ai[j.i];
-  const m=[...o.mc.map(([c])=>D.cats[c]),...o.ms.map(s=>shortSub(D.subs[s])),...o.mk];
+  const m=[...(o.mt||[]).slice(0,2).map(t=>TI.T[t][0]),...o.mc.map(([c])=>D.cats[c]),...o.ms.map(s=>shortSub(D.subs[s])),...o.mk];
   const apc=apcText(j);
   const meta=[esc(j.pub),esc(cty(j.cty))].filter(Boolean).join(" · ");
   const line2=ai?`<span class="sub why"><b>${esc(ai.encaje)}.</b> <em>${esc(ai.motivo)}</em></span>`:(m.length?`<span class="sub why"><em>Coincide en</em> ${m.slice(0,4).map(esc).join(" · ")}</span>`:"");
@@ -781,32 +960,38 @@ const drop=$(".drop");
 ["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,()=>drop.classList.remove("over")));
 drop.addEventListener("drop",e=>{e.preventDefault();const f=e.dataTransfer&&e.dataTransfer.files[0];if(!f)return;const dt=new DataTransfer();dt.items.add(f);$("#file").files=dt.files;$("#file").dispatchEvent(new Event("change"));});
 
+function applyAnalysis(txt){
+  const A=analyzeArticle(txt);
+  S.prof={topics:A.topics.map(({id,w})=>({id,w})),cats:[],subs:[],kws:A.kws};
+  // Scopus categories: those of the journals that publish most in the detected topics, plus the topics' own subfields
+  const lead=score().filter(o=>o.tf>0).sort((x,y)=>y.tf-x.tf).slice(0,40), pw=new Map();
+  for(const o of lead) for(const [c] of o.j.cats) pw.set(c,(pw.get(c)||0)+o.tf/o.j.cats.length);
+  const nrm=m=>{let mx=0;for(const v of m.values()) mx=Math.max(mx,v); return mx;};
+  const pm=nrm(pw)||1, tm=nrm(A.catsFromTopics)||1, cw=new Map();
+  for(const [c,v] of pw) cw.set(c,v/pm);
+  for(const [c,v] of A.catsFromTopics) cw.set(c,(cw.get(c)||0)+.5*v/tm);
+  const carr=[...cw.entries()].sort((x,y)=>y[1]-x[1]), ctop=carr.length?carr[0][1]:1;
+  S.prof.cats=carr.filter(([,v])=>v>=ctop*.4).slice(0,4).map(([id,v])=>({id,w:v>=ctop*.7?3:v>=ctop*.5?2:1}));
+  // DOAJ subjects (for open-access journals outside Scopus) from the journals that best fit those topics
+  const seed=score().filter(o=>o.j.subs.length).slice(0,40), sw=new Map();
+  for(const o of seed) for(const t of o.j.subs) sw.set(t,(sw.get(t)||0)+o.s/o.j.subs.length);
+  const arr=[...sw.entries()].sort((x,y)=>y[1]-x[1]); const top=arr.length?arr[0][1]:1;
+  S.prof.subs=arr.filter(([,v])=>v>=top*.4).slice(0,3).map(([id,v])=>({id,w:v>=top*.7?2:1}));
+  renderProfile(); run();
+  return A;
+}
 $("#btnAnalyze").addEventListener("click",()=>{
   const txt=$("#art").value.trim();
   if(txt.length<40){setStatus("#artStatus","Pega al menos el título, el resumen y las palabras clave del artículo.",true);return;}
-  if(!S.data){setStatus("#artStatus","El catálogo aún se está cargando. Espera unos segundos.",true);return;}
-  const kws=[];
-  const re=/(?:palabras[\s-]*clave|keywords?|key\s*words|palavras[\s-]*chave|descriptores)\s*[:：.\-–]\s*([^\n]+)/gi;
-  let m; while((m=re.exec(txt))){ for(const p of m[1].split(/[;,·•|]/)){ const k=p.replace(/[.\s]+$/,"").trim(); if(k.length>1&&k.length<60&&!kws.some(x=>norm(x)===norm(k))) kws.push(k); } }
-  let note;
-  if(kws.length){ note=`Encontré ${kws.length} palabras clave en el texto.`; }
-  else{
-    const cnt=new Map(); for(const t of norm(txt).split(" ")) if(t.length>5&&!STOP.has(t)) cnt.set(t,(cnt.get(t)||0)+1);
-    [...cnt.entries()].filter(([,n])=>n>1).sort((a,b)=>b[1]-a[1]).slice(0,8).forEach(([t])=>kws.push(t));
-    note=kws.length?`El texto no trae una línea de palabras clave; usé los ${kws.length} términos más repetidos.`:"No pude extraer términos del texto.";
-  }
-  S.prof={cats:[],subs:[],kws:kws.slice(0,20)};
-  // Infer the article's subject areas from the journals that best match its keywords
-  const seed=score().slice(0,60), cw=new Map(), sw=new Map();
-  for(const o of seed){ const w=o.s;
-    for(const [c] of o.j.cats) cw.set(c,(cw.get(c)||0)+w/o.j.cats.length);
-    for(const t of o.j.subs) sw.set(t,(sw.get(t)||0)+w/o.j.subs.length); }
-  const pick=(m,max)=>{const arr=[...m.entries()].sort((a,b)=>b[1]-a[1]); if(!arr.length) return []; const top=arr[0][1];
-    return arr.filter(([,v])=>v>=top*.3).slice(0,max).map(([id,v],i)=>({id,w:v>=top*.7?3:v>=top*.45?2:1}));};
-  S.prof.cats=pick(cw,5); S.prof.subs=pick(sw,3);
-  markEdited(); renderProfile(); run();
-  const nc=S.prof.cats.length+S.prof.subs.length;
-  setStatus("#artStatus",`${esc(note)}${nc?` Según las revistas que publican esos temas, propuse ${nc} áreas en <b>Temas del artículo</b>; quita las que no correspondan.`:""} Añadir 2 o 3 palabras clave en inglés mejora los resultados.`);
+  if(!S.data||!TI.ready){setStatus("#artStatus","El catálogo aún se está cargando. Espera unos segundos.",true);return;}
+  markEdited();
+  const A=applyAnalysis(txt);
+  const L={es:"español",pt:"portugués",en:"inglés"}[A.lang];
+  if(!A.topics.length){setStatus("#artStatus","No pude identificar temas en el texto. Pega el título y el resumen completos, con sus palabras clave.",true);return;}
+  const parts=[`Artículo en ${L}.`, A.kwsFound?`Usé sus ${A.kwsFound} palabras clave.`:"No trae línea de palabras clave; usé el título y el resumen.",
+    `Detecté ${A.topics.length} temas de investigación; el principal es <b>${esc(TI.T[A.topics[0].id][0])}</b>.`];
+  if(A.top<0.12) parts.push("La coincidencia es baja: revisa los temas y añade palabras clave más específicas.");
+  setStatus("#artStatus",parts.join(" "),A.top<0.12);
 });
 const dedupe=a=>{const m=new Map();for(const x of a) if(!m.has(x.id)) m.set(x.id,x);return [...m.values()];};
 
@@ -847,8 +1032,7 @@ $("#list").innerHTML=Array.from({length:6},()=>`<li><div class="rhead" style="cu
   try{ await loadData(); }
   catch(e){ $("#list").innerHTML=`<li class="empty">No se pudo cargar el catálogo de revistas. Recarga la página para intentarlo otra vez.</li>`; $("#finding").textContent="El catálogo no cargó."; return; }
   const D=S.data, ci=new Map(D.cats.map((c,i)=>[c,i])), si=new Map(D.subs.map((c,i)=>[c,i]));
-  S.prof={cats:EXAMPLE.cats.filter(([n])=>ci.has(n)).map(([n,w])=>({id:ci.get(n),w})),subs:EXAMPLE.subs.filter(([n])=>si.has(n)).map(([n,w])=>({id:si.get(n),w})),kws:EXAMPLE.kws.slice()};
-  renderProfile(); run();
+  applyAnalysis(EXAMPLE.text);
 })();
 (async()=>{
   if(!window.claude||!claude.use) return;
